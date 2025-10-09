@@ -1,23 +1,51 @@
-import Foundation
 import Capacitor
+import Foundation
 
-/**
- * Please read the Capacitor iOS Plugin Development Guide
- * here: https://capacitorjs.com/docs/plugins/ios
- */
+@available(iOS 13.0, *)
 @objc(DocumentScannerPlugin)
 public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "DocumentScannerPlugin"
     public let jsName = "DocumentScanner"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "echo", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "scanDocument", returnType: CAPPluginReturnPromise)
     ]
-    private let implementation = DocumentScanner()
 
-    @objc func echo(_ call: CAPPluginCall) {
-        let value = call.getString("value") ?? ""
-        call.resolve([
-            "value": implementation.echo(value)
-        ])
+    private var documentScanner: DocScanner?
+
+    @objc func scanDocument(_ call: CAPPluginCall) {
+        guard let bridgeViewController = bridge?.viewController else {
+            call.reject("Bridge view controller unavailable.")
+            return
+        }
+
+        documentScanner = DocScanner(
+            bridgeViewController,
+            successHandler: { [weak self] scannedImages in
+                call.resolve([
+                    "status": "success",
+                    "scannedImages": scannedImages
+                ])
+                self?.documentScanner = nil
+            },
+            errorHandler: { [weak self] errorMessage in
+                call.reject(errorMessage)
+                self?.documentScanner = nil
+            },
+            cancelHandler: { [weak self] in
+                call.resolve([
+                    "status": "cancel"
+                ])
+                self?.documentScanner = nil
+            },
+            responseType: call.getString("responseType") ?? ResponseType.imageFilePath,
+            croppedImageQuality: clampQuality(call.getInt("croppedImageQuality"))
+        )
+
+        documentScanner?.startScan()
+    }
+
+    private func clampQuality(_ value: Int?) -> Int {
+        let quality = value ?? 100
+        return max(0, min(100, quality))
     }
 }

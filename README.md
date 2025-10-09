@@ -18,25 +18,69 @@ npx cap sync
 
 <docgen-index>
 
-* [`echo(...)`](#echo)
+* [`scanDocument(...)`](#scandocument)
+* [Interfaces](#interfaces)
+* [Enums](#enums)
 
 </docgen-index>
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
 
-### echo(...)
+### scanDocument(...)
 
 ```typescript
-echo(options: { value: string; }) => Promise<{ value: string; }>
+scanDocument(options?: ScanDocumentOptions | undefined) => Promise<ScanDocumentResponse>
 ```
 
-| Param         | Type                            |
-| ------------- | ------------------------------- |
-| **`options`** | <code>{ value: string; }</code> |
+Opens the device camera and starts the document scanning experience.
 
-**Returns:** <code>Promise&lt;{ value: string; }&gt;</code>
+| Param         | Type                                                                |
+| ------------- | ------------------------------------------------------------------- |
+| **`options`** | <code><a href="#scandocumentoptions">ScanDocumentOptions</a></code> |
+
+**Returns:** <code>Promise&lt;<a href="#scandocumentresponse">ScanDocumentResponse</a>&gt;</code>
 
 --------------------
+
+
+### Interfaces
+
+
+#### ScanDocumentResponse
+
+| Prop                | Type                                                                              | Description                                            |
+| ------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **`scannedImages`** | <code>string[]</code>                                                             | Scanned images in the requested response format.       |
+| **`status`**        | <code><a href="#scandocumentresponsestatus">ScanDocumentResponseStatus</a></code> | Indicates whether the scan completed or was cancelled. |
+
+
+#### ScanDocumentOptions
+
+| Prop                      | Type                                                  | Description                                                                                                            | Default                                 |
+| ------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **`croppedImageQuality`** | <code>number</code>                                   | Android only: quality of the cropped image from 0 - 100 (100 is best).                                                 | <code>100</code>                        |
+| **`letUserAdjustCrop`**   | <code>boolean</code>                                  | Android only: allow the user to adjust the detected crop before saving. Disabling this forces single-document capture. | <code>true</code>                       |
+| **`maxNumDocuments`**     | <code>number</code>                                   | Android only: maximum number of documents the user can scan.                                                           | <code>24</code>                         |
+| **`responseType`**        | <code><a href="#responsetype">ResponseType</a></code> | Format to return scanned images in (file paths or base64 strings).                                                     | <code>ResponseType.ImageFilePath</code> |
+
+
+### Enums
+
+
+#### ScanDocumentResponseStatus
+
+| Members       | Value                  | Description                       |
+| ------------- | ---------------------- | --------------------------------- |
+| **`Success`** | <code>'success'</code> | The scan completed successfully.  |
+| **`Cancel`**  | <code>'cancel'</code>  | The user cancelled the scan flow. |
+
+
+#### ResponseType
+
+| Members             | Value                        | Description                                      |
+| ------------------- | ---------------------------- | ------------------------------------------------ |
+| **`Base64`**        | <code>'base64'</code>        | Return scanned images as base64-encoded strings. |
+| **`ImageFilePath`** | <code>'imageFilePath'</code> | Return scanned images as file paths on disk.     |
 
 </docgen-api>
