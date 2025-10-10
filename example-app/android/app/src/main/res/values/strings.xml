@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">example-app</string>
-    <string name="title_activity_main">example-app</string>
-    <string name="package_name">com.example.plugin</string>
-    <string name="custom_url_scheme">com.example.plugin</string>
+    <string name="app_name">Document Scanner Example</string>
+    <string name="title_activity_main">Document Scanner Example</string>
+    <string name="package_name">app.capgo.document.scanner</string>
+    <string name="custom_url_scheme">app.capgo.document.scanner</string>
 </resources>

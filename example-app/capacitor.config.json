@@ -1,6 +1,6 @@
 {
-  "appId": "com.example.plugin",
-  "appName": "example-app",
+  "appId": "app.capgo.document.scanner",
+  "appName": "Document Scanner Example",
   "webDir": "dist",
   "plugins": {
     "SplashScreen": {
