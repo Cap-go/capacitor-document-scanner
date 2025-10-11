@@ -1,4 +1,4 @@
-package com.example.plugin;
+package app.capgo.document.scanner;
 
 import com.getcapacitor.BridgeActivity;
 
