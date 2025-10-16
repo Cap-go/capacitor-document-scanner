@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.0.8](https://github.com/Cap-go/capacitor-document-scanner/compare/7.0.7...7.0.8) (2025-10-16)
+
 ## [7.0.7](https://github.com/Cap-go/capacitor-document-scanner/compare/7.0.6...7.0.7) (2025-10-15)
 
 
