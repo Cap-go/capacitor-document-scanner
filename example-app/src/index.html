@@ -11,14 +11,45 @@
   </head>
   <body>
     <main>
-      <h1>Capacitor Test Plugin Project</h1>
+      <h1>Capacitor Document Scanner</h1>
       <p>
-        This project can be used to test out the functionality of your plugin. Nothing in the
-        <em>example-app/</em> folder will be published to npm when using this template, so you can create away!
+        Use this playground to validate the native document scanning flow. The controls below
+        configure the call to <code>DocumentScanner.scanDocument()</code>.
       </p>
-      <label for="echoInput">Echo Text:</label>
-      <input type="text" id="echoInput" name="echoInput" value="Hello World!" />
-      <button onclick="testEcho()">Click Me!</button>
+
+      <section>
+        <label for="responseType">Response Type:</label>
+        <select id="responseType" name="responseType">
+          <option value="imageFilePath" selected>Image file path</option>
+          <option value="base64">Base64</option>
+        </select>
+      </section>
+
+      <section>
+        <label for="croppedImageQuality">Cropped Image Quality (0 - 100):</label>
+        <input type="number" id="croppedImageQuality" name="croppedImageQuality" min="0" max="100" step="1" value="100" />
+      </section>
+
+      <section>
+        <label for="maxNumDocuments">Max Documents:</label>
+        <input type="number" id="maxNumDocuments" name="maxNumDocuments" min="1" step="1" value="4" />
+      </section>
+
+      <section>
+        <label for="letUserAdjustCrop">
+          <input type="checkbox" id="letUserAdjustCrop" name="letUserAdjustCrop" checked />
+          Let user adjust crop
+        </label>
+      </section>
+
+      <button id="scanButton" type="button">Scan Documents</button>
+
+      <p id="statusText">Status: Idle</p>
+
+      <section id="resultsSection" hidden>
+        <h2>Scanned Images</h2>
+        <div id="results"></div>
+      </section>
     </main>
 
     <script src="./js/example.js" type="module"></script>
