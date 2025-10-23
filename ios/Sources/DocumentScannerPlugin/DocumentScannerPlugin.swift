@@ -4,10 +4,12 @@ import Foundation
 @available(iOS 13.0, *)
 @objc(DocumentScannerPlugin)
 public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
+    private let PLUGIN_VERSION: String = ""
     public let identifier = "DocumentScannerPlugin"
     public let jsName = "DocumentScanner"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "scanDocument", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "scanDocument", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise)
     ]
 
     private var documentScanner: DocScanner?
@@ -48,4 +50,9 @@ public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
         let quality = value ?? 100
         return max(0, min(100, quality))
     }
+
+    @objc func getPluginVersion(_ call: CAPPluginCall) {
+        call.resolve(["version": self.PLUGIN_VERSION])
+    }
+
 }

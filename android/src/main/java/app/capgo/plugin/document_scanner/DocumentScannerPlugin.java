@@ -38,6 +38,8 @@ import java.util.Locale;
 @CapacitorPlugin(name = "DocumentScanner")
 public class DocumentScannerPlugin extends Plugin {
 
+    private final String PLUGIN_VERSION = "";
+
     private static final String RESPONSE_TYPE_BASE64 = "base64";
     private static final String RESPONSE_TYPE_FILE_PATH = "imageFilePath";
 
@@ -288,5 +290,16 @@ public class DocumentScannerPlugin extends Plugin {
             return normalized;
         }
         return RESPONSE_TYPE_FILE_PATH;
+    }
+
+    @PluginMethod
+    public void getPluginVersion(final PluginCall call) {
+        try {
+            final JSObject ret = new JSObject();
+            ret.put("version", this.PLUGIN_VERSION);
+            call.resolve(ret);
+        } catch (final Exception e) {
+            call.reject("Could not get plugin version", e);
+        }
     }
 }
