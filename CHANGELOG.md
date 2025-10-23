@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.2](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.1...7.1.2) (2025-10-23)
+
+
+### Bug Fixes
+
+* remove footer in discord ([47178d4](https://github.com/Cap-go/capacitor-document-scanner/commit/47178d425b4e902fa5f06a98168e4dcfaa129c4f))
+
 ## [7.1.1](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.0...7.1.1) (2025-10-23)
 
 
