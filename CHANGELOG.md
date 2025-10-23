@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.0](https://github.com/Cap-go/capacitor-document-scanner/compare/7.0.8...7.1.0) (2025-10-23)
+
+
+### Features
+
+* add getPluginVersion method to DocumentScanner plugin and update workflows for changelog generation ([c5983be](https://github.com/Cap-go/capacitor-document-scanner/commit/c5983be26f827a02a090fcd286c2701377777734))
+
+
+### Bug Fixes
+
+* remove default content message from Discord release notification ([7b4ec99](https://github.com/Cap-go/capacitor-document-scanner/commit/7b4ec99ccd205096c2aee7738a387999e2dc95e7))
+
 ## [7.0.8](https://github.com/Cap-go/capacitor-document-scanner/compare/7.0.7...7.0.8) (2025-10-16)
 
 ## [7.0.7](https://github.com/Cap-go/capacitor-document-scanner/compare/7.0.6...7.0.7) (2025-10-15)
