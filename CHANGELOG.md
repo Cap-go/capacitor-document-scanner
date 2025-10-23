@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.1](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.0...7.1.1) (2025-10-23)
+
+
+### Bug Fixes
+
+* update Discord release notification username to include repository name ([b9bd5a4](https://github.com/Cap-go/capacitor-document-scanner/commit/b9bd5a4cc40633dcb249bf601f3b5da1a2d5286d))
+
 ## [7.1.0](https://github.com/Cap-go/capacitor-document-scanner/compare/7.0.8...7.1.0) (2025-10-23)
 
 
