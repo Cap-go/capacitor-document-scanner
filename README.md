@@ -54,6 +54,10 @@ Opens the device camera and starts the document scanning experience.
 | **`scannedImages`** | <code>string[]</code>                                                             | Scanned images in the requested response format.       |
 | **`status`**        | <code><a href="#scandocumentresponsestatus">ScanDocumentResponseStatus</a></code> | Indicates whether the scan completed or was cancelled. |
 
+| Method               | Signature                                    | Description                             |
+| -------------------- | -------------------------------------------- | --------------------------------------- |
+| **getPluginVersion** | () =&gt; Promise&lt;{ version: string; }&gt; | Get the native Capacitor plugin version |
+
 
 #### ScanDocumentOptions
 
