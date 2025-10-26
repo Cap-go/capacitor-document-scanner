@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.5](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.4...7.1.5) (2025-10-26)
+
+
+### Bug Fixes
+
+* prevent bump for app ([f03c1fa](https://github.com/Cap-go/capacitor-document-scanner/commit/f03c1fad5d1bfcaba8809cc89c24a3da810ace56))
+
 ## [7.1.4](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.3...7.1.4) (2025-10-26)
 
 ## [7.1.3](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.2...7.1.3) (2025-10-26)
