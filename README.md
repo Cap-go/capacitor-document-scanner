@@ -92,3 +92,8 @@ Opens the device camera and starts the document scanning experience.
 | **`ImageFilePath`** | <code>'imageFilePath'</code> | Return scanned images as file paths on disk.     |
 
 </docgen-api>
+
+## credits
+
+This plugin is a re implementation of the original https://document-scanner.js.org
+Thanks for the original work, we recoded it with more modern SDK but explose the same API
