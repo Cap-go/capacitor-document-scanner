@@ -7,6 +7,10 @@
 </div>
 Capacitor plugin to scan document iOS and Android
 
+## Documentation
+
+The most complete doc is available here: https://capgo.app/docs/plugins/document-scanner/
+
 ## Install
 
 ```bash
