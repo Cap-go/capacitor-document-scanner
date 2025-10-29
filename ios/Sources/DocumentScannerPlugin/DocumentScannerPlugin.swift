@@ -4,7 +4,7 @@ import Foundation
 @available(iOS 13.0, *)
 @objc(DocumentScannerPlugin)
 public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
-    private let PLUGIN_VERSION: String = "7.1.7"
+    private let PLUGIN_VERSION: String = "7.1.8"
     public let identifier = "DocumentScannerPlugin"
     public let jsName = "DocumentScanner"
     public let pluginMethods: [CAPPluginMethod] = [
