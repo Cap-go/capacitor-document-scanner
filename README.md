@@ -23,8 +23,8 @@ npx cap sync
 ### Scanning one note
 
 | iOS | Android |
-|-----|---------|
-| <video src="./videos/ios.mp4" width="300" controls></video> | <video src="./videos/android.mp4" width="300" controls></video> |
+|:---:|:-------:|
+| https://github.com/Cap-go/capacitor-document-scanner/raw/add_videos_to_readme/videos/ios.mp4 | https://github.com/Cap-go/capacitor-document-scanner/raw/add_videos_to_readme/videos/android.mp4 |
 
 ## API
 
