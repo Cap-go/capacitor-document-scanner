@@ -3,6 +3,7 @@ import {
   ResponseType,
   ScanDocumentResponseStatus,
 } from '@capgo/capacitor-document-scanner';
+import { Capacitor } from '@capacitor/core';
 
 const scanButton = document.getElementById('scanButton');
 const statusText = document.getElementById('statusText');
@@ -14,9 +15,33 @@ const qualityInput = document.getElementById('croppedImageQuality');
 const maxDocsInput = document.getElementById('maxNumDocuments');
 const letUserAdjustCropInput = document.getElementById('letUserAdjustCrop');
 
-const setStatus = (message) => {
+const setStatus = (message, type = 'idle') => {
   if (statusText) {
-    statusText.textContent = `Status: ${message}`;
+    // Remove all status classes
+    statusText.className = 'status-badge';
+    
+    // Add appropriate class based on type
+    switch (type) {
+      case 'scanning':
+        statusText.classList.add('status-scanning');
+        break;
+      case 'success':
+        statusText.classList.add('status-success');
+        break;
+      case 'error':
+        statusText.classList.add('status-error');
+        break;
+      case 'cancel':
+        statusText.classList.add('status-cancel');
+        break;
+      default:
+        statusText.classList.add('status-idle');
+    }
+    
+    statusText.innerHTML = `
+      <span class="status-indicator"></span>
+      <span>${message}</span>
+    `;
   }
 };
 
@@ -60,57 +85,97 @@ const renderResults = (images = [], responseType) => {
 
   resultsContainer.innerHTML = '';
 
-  images.forEach((image, index) => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'scan-result';
-    const title = document.createElement('h3');
-    title.textContent = `Document ${index + 1}`;
-    wrapper.appendChild(title);
+  if (images.length === 0) {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'empty-state';
+    emptyState.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <p>No documents scanned</p>
+    `;
+    resultsContainer.appendChild(emptyState);
+  } else {
+    images.forEach((image, index) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'scan-result';
+      
+      const title = document.createElement('h3');
+      title.textContent = `Document ${index + 1}`;
+      wrapper.appendChild(title);
 
-    if (responseType === ResponseType.Base64) {
+      const imageContainer = document.createElement('div');
+      imageContainer.className = 'image-container';
+
       const img = document.createElement('img');
-      // Base64 strings need a data URI prefix to render in the browser.
-      img.src = `data:image/jpeg;base64,${image}`;
       img.alt = `Scanned document ${index + 1}`;
-      img.style.maxWidth = '100%';
-      img.style.height = 'auto';
-      wrapper.appendChild(img);
-    } else {
-      const codeBlock = document.createElement('code');
-      codeBlock.textContent = image;
-      wrapper.appendChild(codeBlock);
-    }
+      img.loading = 'lazy';
 
-    resultsContainer.appendChild(wrapper);
-  });
+      if (responseType === ResponseType.Base64) {
+        // Base64 strings need a data URI prefix to render in the browser.
+        img.src = `data:image/jpeg;base64,${image}`;
+      } else {
+        // Convert the file path to a web-accessible URL using Capacitor
+        img.src = Capacitor.convertFileSrc(image);
+        
+        // Also show the file path for reference
+        const filePath = document.createElement('div');
+        filePath.className = 'file-path';
+        filePath.textContent = image;
+        wrapper.appendChild(filePath);
+      }
+
+      imageContainer.appendChild(img);
+      wrapper.insertBefore(imageContainer, wrapper.children[1]);
+      resultsContainer.appendChild(wrapper);
+    });
+  }
 
   if (resultsSection) {
-    resultsSection.hidden = images.length === 0;
+    resultsSection.hidden = false;
   }
 };
 
 const handleScan = async () => {
   clearResults();
-  setStatus('Starting scan...');
+  setStatus('Starting scan...', 'scanning');
+  
+  // Disable button during scan
+  if (scanButton) {
+    scanButton.disabled = true;
+  }
 
   try {
     const options = buildOptions();
     const response = await DocumentScanner.scanDocument(options);
     const status = response.status ?? 'unknown';
-    setStatus(status);
 
     if (response.status === ScanDocumentResponseStatus.Success && response.scannedImages?.length) {
+      const count = response.scannedImages.length;
+      setStatus(`Successfully scanned ${count} document${count > 1 ? 's' : ''}`, 'success');
       renderResults(response.scannedImages, options.responseType);
+    } else if (response.status === ScanDocumentResponseStatus.Cancel) {
+      setStatus('Scan cancelled', 'cancel');
+      renderResults([], options.responseType);
     } else {
+      setStatus('No documents scanned', 'idle');
       renderResults([], options.responseType);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    setStatus(`Error - ${message}`);
+    setStatus(`Error: ${message}`, 'error');
     clearResults();
+  } finally {
+    // Re-enable button
+    if (scanButton) {
+      scanButton.disabled = false;
+    }
   }
 };
 
 if (scanButton) {
   scanButton.addEventListener('click', handleScan);
 }
+
+// Set initial status
+setStatus('Ready to scan', 'idle');

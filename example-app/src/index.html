@@ -2,53 +2,389 @@
 <html lang="en" dir="ltr" class="hydrated">
   <head>
     <meta charset="UTF-8" />
-    <title>Example Capacitor App</title>
+    <title>Document Scanner Demo</title>
     <meta
       name="viewport"
       content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <meta name="format-detection" content="telephone=no" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --primary-color: #6366f1;
+        --primary-hover: #4f46e5;
+        --success-color: #10b981;
+        --error-color: #ef4444;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --bg-primary: #ffffff;
+        --bg-secondary: #f9fafb;
+        --border-color: #e5e7eb;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        color: var(--text-primary);
+      }
+
+      main {
+        max-width: 800px;
+        margin: 0 auto;
+        background: var(--bg-primary);
+        border-radius: 16px;
+        box-shadow: var(--shadow-xl);
+        padding: 32px;
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        color: var(--text-secondary);
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 32px;
+      }
+
+      .controls-grid {
+        display: grid;
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      label {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .checkbox-label {
+        flex-direction: row;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 15px;
+        transition: all 0.2s;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+      }
+
+      input[type="number"]:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+
+      input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: var(--primary-color);
+      }
+
+      button {
+        width: 100%;
+        padding: 16px 32px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 20px;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 14px;
+        margin-bottom: 24px;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .status-idle {
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+      }
+
+      .status-scanning {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .status-success {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .status-error {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .status-cancel {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      #resultsSection {
+        margin-top: 32px;
+        animation: slideIn 0.4s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      #resultsSection h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+      }
+
+      .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+      }
+
+      .scan-result {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s;
+        animation: scaleIn 0.3s ease-out;
+      }
+
+      @keyframes scaleIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .scan-result:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .scan-result h3 {
+        padding: 16px;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        background: white;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .image-container {
+        position: relative;
+        width: 100%;
+        padding-bottom: 141.4%; /* A4 ratio */
+        background: white;
+        overflow: hidden;
+      }
+
+      .image-container img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: transform 0.3s;
+      }
+
+      .image-container img:hover {
+        transform: scale(1.05);
+      }
+
+      .file-path {
+        padding: 16px;
+        background: #f3f4f6;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        color: var(--text-secondary);
+        word-break: break-all;
+        border-top: 1px solid var(--border-color);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-secondary);
+      }
+
+      .empty-state svg {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      @media (max-width: 640px) {
+        main {
+          padding: 24px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .results-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
   </head>
   <body>
     <main>
-      <h1>Capacitor Document Scanner</h1>
-      <p>
-        Use this playground to validate the native document scanning flow. The controls below
-        configure the call to <code>DocumentScanner.scanDocument()</code>.
+      <h1>📄 Document Scanner</h1>
+      <p class="subtitle">
+        Scan documents using your device camera with automatic edge detection and perspective correction.
       </p>
 
-      <section>
-        <label for="responseType">Response Type:</label>
-        <select id="responseType" name="responseType">
-          <option value="imageFilePath" selected>Image file path</option>
-          <option value="base64">Base64</option>
-        </select>
-      </section>
+      <div class="controls-grid">
+        <div class="form-group">
+          <label for="responseType">Response Type</label>
+          <select id="responseType" name="responseType">
+            <option value="imageFilePath" selected>Image File Path</option>
+            <option value="base64">Base64 String</option>
+          </select>
+        </div>
 
-      <section>
-        <label for="croppedImageQuality">Cropped Image Quality (0 - 100):</label>
-        <input type="number" id="croppedImageQuality" name="croppedImageQuality" min="0" max="100" step="1" value="100" />
-      </section>
+        <div class="form-group">
+          <label for="croppedImageQuality">Image Quality (0-100)</label>
+          <input type="number" id="croppedImageQuality" name="croppedImageQuality" min="0" max="100" step="1" value="100" />
+        </div>
 
-      <section>
-        <label for="maxNumDocuments">Max Documents:</label>
-        <input type="number" id="maxNumDocuments" name="maxNumDocuments" min="1" step="1" value="4" />
-      </section>
+        <div class="form-group">
+          <label for="maxNumDocuments">Maximum Documents</label>
+          <input type="number" id="maxNumDocuments" name="maxNumDocuments" min="1" step="1" value="4" />
+        </div>
 
-      <section>
-        <label for="letUserAdjustCrop">
-          <input type="checkbox" id="letUserAdjustCrop" name="letUserAdjustCrop" checked />
-          Let user adjust crop
-        </label>
-      </section>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="letUserAdjustCrop" name="letUserAdjustCrop" checked />
+            <span>Allow manual crop adjustment</span>
+          </label>
+        </div>
+      </div>
 
-      <button id="scanButton" type="button">Scan Documents</button>
+      <button id="scanButton" type="button">
+        🚀 Start Scanning
+      </button>
 
-      <p id="statusText">Status: Idle</p>
+      <div id="statusText" class="status-badge status-idle">
+        <span class="status-indicator"></span>
+        <span>Ready to scan</span>
+      </div>
 
       <section id="resultsSection" hidden>
-        <h2>Scanned Images</h2>
-        <div id="results"></div>
+        <h2>📸 Scanned Documents</h2>
+        <div id="results" class="results-grid"></div>
       </section>
     </main>
 
