@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.7](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.6...7.1.7) (2025-10-29)
+
+
+### Bug Fixes
+
+* CI/CD config ([7031091](https://github.com/Cap-go/capacitor-document-scanner/commit/70310912641972103bff477c78463fc5a6e03507))
+* update AI model in build workflow ([4271fa0](https://github.com/Cap-go/capacitor-document-scanner/commit/4271fa01a90c2c351ac8cc4cff063a8ea10ae3ac))
+* update github action ([a5eb561](https://github.com/Cap-go/capacitor-document-scanner/commit/a5eb56145020dc27aa8f93da381449e9cb99800e))
+
 ## [7.1.6](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.5...7.1.6) (2025-10-27)
 
 
