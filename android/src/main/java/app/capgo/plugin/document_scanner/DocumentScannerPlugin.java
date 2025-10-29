@@ -38,7 +38,7 @@ import java.util.Locale;
 @CapacitorPlugin(name = "DocumentScanner")
 public class DocumentScannerPlugin extends Plugin {
 
-    private final String PLUGIN_VERSION = "";
+    private final String PLUGIN_VERSION = "7.1.7";
 
     private static final String RESPONSE_TYPE_BASE64 = "base64";
     private static final String RESPONSE_TYPE_FILE_PATH = "imageFilePath";
