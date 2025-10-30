@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.9](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.8...7.1.9) (2025-10-30)
+
+
+### Bug Fixes
+
+* pluginVersion lint issue ([72b5ece](https://github.com/Cap-go/capacitor-document-scanner/commit/72b5eceb988460a7ac4978a9ef2cb79914c4b19f))
+
 ## [7.1.8](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.7...7.1.8) (2025-10-29)
 
 
