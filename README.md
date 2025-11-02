@@ -18,6 +18,14 @@ npm install @capgo/capacitor-document-scanner
 npx cap sync
 ```
 
+## Demo
+
+### Scanning one note
+
+| iOS | Android |
+|:---:|:-------:|
+| ![iOS Demo](videos/ios.gif) | ![Android Demo](videos/android.gif) |
+
 ## API
 
 <docgen-index>
