@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.2.0](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.9...7.2.0) (2025-11-02)
+
+
+### Features
+
+* make example app beautiful ([8a81a75](https://github.com/Cap-go/capacitor-document-scanner/commit/8a81a75119609094bb89a58eff2b28e1d513f986))
+* showcase the plugin in the readme ([860a9a0](https://github.com/Cap-go/capacitor-document-scanner/commit/860a9a0dc7f8cf2372a0dd92dfff806cafad611a))
+
+
+### Bug Fixes
+
+* NSCameraUsageDescription ([8745c80](https://github.com/Cap-go/capacitor-document-scanner/commit/8745c802717c0c4ddcccd26780482def2038e6a0))
+* urls for videos ([a15b1c5](https://github.com/Cap-go/capacitor-document-scanner/commit/a15b1c5a0c9b7971463701eea11f0c3129b2140c))
+* use gifs instead of mp4 in readme ([f9a6189](https://github.com/Cap-go/capacitor-document-scanner/commit/f9a6189510ea209de012c5227ce8d2010968d902))
+
 ## [7.1.9](https://github.com/Cap-go/capacitor-document-scanner/compare/7.1.8...7.1.9) (2025-10-30)
 
 
