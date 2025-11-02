@@ -24,7 +24,7 @@ npx cap sync
 
 | iOS | Android |
 |:---:|:-------:|
-| https://github.com/Cap-go/capacitor-document-scanner/raw/add_videos_to_readme/videos/ios.mp4 | https://github.com/Cap-go/capacitor-document-scanner/raw/add_videos_to_readme/videos/android.mp4 |
+| ![iOS Demo](videos/ios.gif) | ![Android Demo](videos/android.gif) |
 
 ## API
 
