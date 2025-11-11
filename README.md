@@ -104,4 +104,4 @@ Opens the device camera and starts the document scanning experience.
 ## credits
 
 This plugin is a re implementation of the original https://document-scanner.js.org
-Thanks for the original work, we recoded it with more modern SDK but explose the same API
+Thanks for the original work, we recoded it with more modern SDK but explodes the same API
