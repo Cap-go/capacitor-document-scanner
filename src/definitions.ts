@@ -30,6 +30,50 @@ export interface ScanDocumentOptions {
    * @default ResponseType.ImageFilePath
    */
   responseType?: ResponseType;
+
+  /**
+   * Brightness adjustment applied to scanned images.
+   * Range: -255 to 255 (0 = no change, positive = brighter, negative = darker)
+   * Useful for compensating low-light scans.
+   * @default 0
+   */
+  brightness?: number;
+
+  /**
+   * Contrast adjustment applied to scanned images.
+   * Range: 0.0 to 10.0 (1.0 = no change, >1 = more contrast, <1 = less contrast)
+   * Helps improve text clarity in poorly lit scans.
+   * @default 1.0
+   */
+  contrast?: number;
+
+  /**
+   * Android only: scanner mode that controls ML Kit features and filters.
+   * - 'base': Basic scan with crop/rotate, no filters or ML cleaning
+   * - 'base_with_filter': Adds grayscale and auto-enhancement filters
+   * - 'full': All features including ML-based image cleaning (erases stains, fingers, etc.)
+   * @default ScannerMode.Full
+   */
+  scannerMode?: ScannerMode;
+}
+
+export enum ScannerMode {
+  /**
+   * Basic document scanning with crop and rotate features only.
+   * No filters or ML-based enhancements.
+   */
+  Base = 'base',
+
+  /**
+   * Basic features plus automatic filters (grayscale, auto-enhancement).
+   */
+  BaseWithFilter = 'base_with_filter',
+
+  /**
+   * Full feature set including ML-based image cleaning.
+   * Automatically removes stains, fingers, and other artifacts.
+   */
+  Full = 'full',
 }
 
 export enum ResponseType {

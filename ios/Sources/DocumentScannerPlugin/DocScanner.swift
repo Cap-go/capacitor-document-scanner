@@ -12,6 +12,8 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
     private var cancelHandler: () -> Void
     private var responseType: String
     private var croppedImageQuality: Int
+    private var brightness: Float
+    private var contrast: Float
 
     init(
         _ viewController: UIViewController? = nil,
@@ -19,7 +21,9 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         errorHandler: @escaping (String) -> Void = { _ in },
         cancelHandler: @escaping () -> Void = {},
         responseType: String = ResponseType.imageFilePath,
-        croppedImageQuality: Int = 100
+        croppedImageQuality: Int = 100,
+        brightness: Float = 0.0,
+        contrast: Float = 1.0
     ) {
         self.viewController = viewController
         self.successHandler = successHandler
@@ -27,6 +31,8 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         self.cancelHandler = cancelHandler
         self.responseType = responseType
         self.croppedImageQuality = croppedImageQuality
+        self.brightness = brightness
+        self.contrast = contrast
     }
 
     override convenience init() {
@@ -52,7 +58,9 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         errorHandler: @escaping (String) -> Void = { _ in },
         cancelHandler: @escaping () -> Void = {},
         responseType: String? = ResponseType.imageFilePath,
-        croppedImageQuality: Int? = 100
+        croppedImageQuality: Int? = 100,
+        brightness: Float? = 0.0,
+        contrast: Float? = 1.0
     ) {
         self.viewController = viewController
         self.successHandler = successHandler
@@ -60,6 +68,8 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         self.cancelHandler = cancelHandler
         self.responseType = responseType ?? ResponseType.imageFilePath
         self.croppedImageQuality = croppedImageQuality ?? 100
+        self.brightness = brightness ?? 0.0
+        self.contrast = contrast ?? 1.0
 
         startScan()
     }
@@ -71,8 +81,15 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         var results: [String] = []
 
         for pageNumber in 0 ..< scan.pageCount {
+            var processedImage = scan.imageOfPage(at: pageNumber)
+
+            // Apply brightness and contrast adjustments if needed
+            if brightness != 0.0 || contrast != 1.0 {
+                processedImage = applyBrightnessContrast(to: processedImage, brightness: brightness, contrast: contrast)
+            }
+
             guard
-                let scannedImageData = scan.imageOfPage(at: pageNumber)
+                let scannedImageData = processedImage
                     .jpegData(compressionQuality: CGFloat(croppedImageQuality) / CGFloat(100))
             else {
                 goBackToPreviousView(controller)
@@ -122,5 +139,37 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         DispatchQueue.main.async {
             controller.dismiss(animated: true)
         }
+    }
+
+    /**
+     Applies brightness and contrast adjustments to a UIImage using CIFilter.
+     - Parameter image: The source image
+     - Parameter brightness: Brightness adjustment (-255 to 255, 0 = no change)
+     - Parameter contrast: Contrast adjustment (0.0 to 10.0, 1.0 = no change)
+     - Returns: A new UIImage with adjustments applied
+     */
+    private func applyBrightnessContrast(to image: UIImage, brightness: Float, contrast: Float) -> UIImage {
+        guard let ciImage = CIImage(image: image) else {
+            return image
+        }
+
+        // Normalize brightness from (-255, 255) to (-1, 1) for CIColorControls
+        let normalizedBrightness = brightness / 255.0
+
+        let filter = CIFilter(name: "CIColorControls")
+        filter?.setValue(ciImage, forKey: kCIInputImageKey)
+        filter?.setValue(normalizedBrightness, forKey: kCIInputBrightnessKey)
+        filter?.setValue(contrast, forKey: kCIInputContrastKey)
+
+        guard let outputImage = filter?.outputImage else {
+            return image
+        }
+
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(outputImage, from: outputImage.extent) else {
+            return image
+        }
+
+        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
     }
 }

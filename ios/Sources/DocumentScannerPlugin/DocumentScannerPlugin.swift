@@ -40,7 +40,9 @@ public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
                 self?.documentScanner = nil
             },
             responseType: call.getString("responseType") ?? ResponseType.imageFilePath,
-            croppedImageQuality: clampQuality(call.getInt("croppedImageQuality"))
+            croppedImageQuality: clampQuality(call.getInt("croppedImageQuality")),
+            brightness: clampBrightness(call.getFloat("brightness")),
+            contrast: clampContrast(call.getFloat("contrast"))
         )
 
         documentScanner?.startScan()
@@ -49,6 +51,16 @@ public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
     private func clampQuality(_ value: Int?) -> Int {
         let quality = value ?? 100
         return max(0, min(100, quality))
+    }
+
+    private func clampBrightness(_ value: Float?) -> Float {
+        let brightness = value ?? 0.0
+        return max(-255.0, min(255.0, brightness))
+    }
+
+    private func clampContrast(_ value: Float?) -> Float {
+        let contrast = value ?? 1.0
+        return max(0.0, min(10.0, contrast))
     }
 
     @objc func getPluginVersion(_ call: CAPPluginCall) {

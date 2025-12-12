@@ -73,12 +73,15 @@ Opens the device camera and starts the document scanning experience.
 
 #### ScanDocumentOptions
 
-| Prop                      | Type                                                  | Description                                                                                                            | Default                                 |
-| ------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| **`croppedImageQuality`** | <code>number</code>                                   | Android only: quality of the cropped image from 0 - 100 (100 is best).                                                 | <code>100</code>                        |
-| **`letUserAdjustCrop`**   | <code>boolean</code>                                  | Android only: allow the user to adjust the detected crop before saving. Disabling this forces single-document capture. | <code>true</code>                       |
-| **`maxNumDocuments`**     | <code>number</code>                                   | Android only: maximum number of documents the user can scan.                                                           | <code>24</code>                         |
-| **`responseType`**        | <code><a href="#responsetype">ResponseType</a></code> | Format to return scanned images in (file paths or base64 strings).                                                     | <code>ResponseType.ImageFilePath</code> |
+| Prop                      | Type                                                  | Description                                                                                                                                                                                                                                                                                      | Default                                 |
+| ------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| **`croppedImageQuality`** | <code>number</code>                                   | Android only: quality of the cropped image from 0 - 100 (100 is best).                                                                                                                                                                                                                           | <code>100</code>                        |
+| **`letUserAdjustCrop`**   | <code>boolean</code>                                  | Android only: allow the user to adjust the detected crop before saving. Disabling this forces single-document capture.                                                                                                                                                                           | <code>true</code>                       |
+| **`maxNumDocuments`**     | <code>number</code>                                   | Android only: maximum number of documents the user can scan.                                                                                                                                                                                                                                     | <code>24</code>                         |
+| **`responseType`**        | <code><a href="#responsetype">ResponseType</a></code> | Format to return scanned images in (file paths or base64 strings).                                                                                                                                                                                                                               | <code>ResponseType.ImageFilePath</code> |
+| **`brightness`**          | <code>number</code>                                   | Brightness adjustment applied to scanned images. Range: -255 to 255 (0 = no change, positive = brighter, negative = darker) Useful for compensating low-light scans.                                                                                                                             | <code>0</code>                          |
+| **`contrast`**            | <code>number</code>                                   | Contrast adjustment applied to scanned images. Range: 0.0 to 10.0 (1.0 = no change, &gt;1 = more contrast, &lt;1 = less contrast) Helps improve text clarity in poorly lit scans.                                                                                                                | <code>1.0</code>                        |
+| **`scannerMode`**         | <code><a href="#scannermode">ScannerMode</a></code>   | Android only: scanner mode that controls ML Kit features and filters. - 'base': Basic scan with crop/rotate, no filters or ML cleaning - 'base_with_filter': Adds grayscale and auto-enhancement filters - 'full': All features including ML-based image cleaning (erases stains, fingers, etc.) | <code>ScannerMode.Full</code>           |
 
 
 ### Enums
@@ -98,6 +101,15 @@ Opens the device camera and starts the document scanning experience.
 | ------------------- | ---------------------------- | ------------------------------------------------ |
 | **`Base64`**        | <code>'base64'</code>        | Return scanned images as base64-encoded strings. |
 | **`ImageFilePath`** | <code>'imageFilePath'</code> | Return scanned images as file paths on disk.     |
+
+
+#### ScannerMode
+
+| Members              | Value                           | Description                                                                                                     |
+| -------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **`Base`**           | <code>'base'</code>             | Basic document scanning with crop and rotate features only. No filters or ML-based enhancements.                |
+| **`BaseWithFilter`** | <code>'base_with_filter'</code> | Basic features plus automatic filters (grayscale, auto-enhancement).                                            |
+| **`Full`**           | <code>'full'</code>             | Full feature set including ML-based image cleaning. Automatically removes stains, fingers, and other artifacts. |
 
 </docgen-api>
 

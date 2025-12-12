@@ -2,6 +2,7 @@ import {
   DocumentScanner,
   ResponseType,
   ScanDocumentResponseStatus,
+  ScannerMode,
 } from '@capgo/capacitor-document-scanner';
 import { Capacitor } from '@capacitor/core';
 
@@ -13,7 +14,10 @@ const resultsContainer = document.getElementById('results');
 const responseTypeSelect = document.getElementById('responseType');
 const qualityInput = document.getElementById('croppedImageQuality');
 const maxDocsInput = document.getElementById('maxNumDocuments');
+const scannerModeSelect = document.getElementById('scannerMode');
 const letUserAdjustCropInput = document.getElementById('letUserAdjustCrop');
+const brightnessInput = document.getElementById('brightness');
+const contrastInput = document.getElementById('contrast');
 
 const setStatus = (message, type = 'idle') => {
   if (statusText) {
@@ -71,8 +75,23 @@ const buildOptions = () => {
     options.maxNumDocuments = Math.floor(maxDocs);
   }
 
+  const scannerMode = scannerModeSelect?.value;
+  if (scannerMode && Object.values(ScannerMode).includes(scannerMode)) {
+    options.scannerMode = scannerMode;
+  }
+
   if (typeof letUserAdjustCropInput?.checked === 'boolean') {
     options.letUserAdjustCrop = letUserAdjustCropInput.checked;
+  }
+
+  const brightness = Number(brightnessInput?.value);
+  if (!Number.isNaN(brightness)) {
+    options.brightness = clamp(brightness, -255, 255);
+  }
+
+  const contrast = Number(contrastInput?.value);
+  if (!Number.isNaN(contrast)) {
+    options.contrast = clamp(contrast, 0, 10);
   }
 
   return options;

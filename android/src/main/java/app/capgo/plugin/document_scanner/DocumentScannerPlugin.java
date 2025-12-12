@@ -5,6 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.util.Base64;
 import androidx.activity.result.ActivityResult;
@@ -43,6 +47,10 @@ public class DocumentScannerPlugin extends Plugin {
     private static final String RESPONSE_TYPE_BASE64 = "base64";
     private static final String RESPONSE_TYPE_FILE_PATH = "imageFilePath";
 
+    private static final String SCANNER_MODE_BASE = "base";
+    private static final String SCANNER_MODE_BASE_WITH_FILTER = "base_with_filter";
+    private static final String SCANNER_MODE_FULL = "full";
+
     private ActivityResultLauncher<IntentSenderRequest> scannerLauncher;
     private PendingScan pendingScan;
 
@@ -51,11 +59,15 @@ public class DocumentScannerPlugin extends Plugin {
         private final String callId;
         private final String responseType;
         private final int quality;
+        private final float brightness;
+        private final float contrast;
 
-        PendingScan(String callId, String responseType, int quality) {
+        PendingScan(String callId, String responseType, int quality, float brightness, float contrast) {
             this.callId = callId;
             this.responseType = responseType;
             this.quality = quality;
+            this.brightness = brightness;
+            this.contrast = contrast;
         }
     }
 
@@ -90,20 +102,23 @@ public class DocumentScannerPlugin extends Plugin {
         String responseType = normalizeResponseType(call.getString("responseType"));
         int pageLimit = clamp(call.getInt("maxNumDocuments", 24), 1, 24);
         boolean allowAdjustCrop = call.getBoolean("letUserAdjustCrop", true);
+        float brightness = clampFloat(call.getFloat("brightness", 0f), -255f, 255f);
+        float contrast = clampFloat(call.getFloat("contrast", 1f), 0f, 10f);
+        String scannerMode = normalizeScannerMode(call.getString("scannerMode"));
 
         GmsDocumentScannerOptions.Builder optionsBuilder = new GmsDocumentScannerOptions.Builder()
             .setGalleryImportAllowed(false)
             .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
             .setPageLimit(pageLimit);
 
-        optionsBuilder.setScannerMode(
-            allowAdjustCrop ? GmsDocumentScannerOptions.SCANNER_MODE_FULL : GmsDocumentScannerOptions.SCANNER_MODE_BASE
-        );
+        // Determine scanner mode based on scannerMode parameter and letUserAdjustCrop
+        int mlKitScannerMode = determineScannerMode(scannerMode, allowAdjustCrop);
+        optionsBuilder.setScannerMode(mlKitScannerMode);
 
         GmsDocumentScanner scanner = GmsDocumentScanning.getClient(optionsBuilder.build());
 
         bridge.saveCall(call);
-        pendingScan = new PendingScan(call.getCallbackId(), responseType, quality);
+        pendingScan = new PendingScan(call.getCallbackId(), responseType, quality, brightness, contrast);
 
         scanner
             .getStartScanIntent(activity)
@@ -194,8 +209,11 @@ public class DocumentScannerPlugin extends Plugin {
         }
 
         byte[] imageBytes = readBytesFromUri(imageUri);
-        if (scan.quality < 100) {
-            imageBytes = reencodeImage(imageBytes, scan.quality);
+
+        // Apply brightness/contrast adjustments if needed
+        boolean needsAdjustment = scan.brightness != 0f || scan.contrast != 1f;
+        if (needsAdjustment || scan.quality < 100) {
+            imageBytes = processImage(imageBytes, scan.quality, scan.brightness, scan.contrast);
         }
 
         if (RESPONSE_TYPE_BASE64.equals(scan.responseType)) {
@@ -225,19 +243,60 @@ public class DocumentScannerPlugin extends Plugin {
         }
     }
 
-    private byte[] reencodeImage(byte[] source, int quality) throws IOException {
+    private byte[] processImage(byte[] source, int quality, float brightness, float contrast) throws IOException {
         Bitmap bitmap = BitmapFactory.decodeByteArray(source, 0, source.length);
         if (bitmap == null) {
             throw new IOException("Unable to decode scanned image.");
         }
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            if (!bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)) {
-                throw new IOException("Unable to compress scanned image.");
+
+        try {
+            // Apply brightness and contrast adjustments if needed
+            if (brightness != 0f || contrast != 1f) {
+                bitmap = applyBrightnessContrast(bitmap, brightness, contrast);
             }
-            return outputStream.toByteArray();
+
+            // Compress with quality setting
+            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)) {
+                    throw new IOException("Unable to compress scanned image.");
+                }
+                return outputStream.toByteArray();
+            }
         } finally {
             bitmap.recycle();
         }
+    }
+
+    /**
+     * Applies brightness and contrast adjustments to a bitmap using ColorMatrix.
+     * @param bitmap The source bitmap
+     * @param brightness Brightness adjustment (-255 to 255, 0 = no change)
+     * @param contrast Contrast adjustment (0.0 to 10.0, 1.0 = no change)
+     * @return A new bitmap with adjustments applied
+     */
+    private Bitmap applyBrightnessContrast(Bitmap bitmap, float brightness, float contrast) {
+        // Create ColorMatrix for brightness and contrast
+        ColorMatrix colorMatrix = new ColorMatrix(new float[] {
+            contrast, 0, 0, 0, brightness,
+            0, contrast, 0, 0, brightness,
+            0, 0, contrast, 0, brightness,
+            0, 0, 0, 1, 0
+        });
+
+        // Create a new bitmap with the same dimensions
+        Bitmap adjustedBitmap = Bitmap.createBitmap(
+            bitmap.getWidth(),
+            bitmap.getHeight(),
+            bitmap.getConfig()
+        );
+
+        // Apply the color matrix
+        Canvas canvas = new Canvas(adjustedBitmap);
+        Paint paint = new Paint();
+        paint.setColorFilter(new ColorMatrixColorFilter(colorMatrix));
+        canvas.drawBitmap(bitmap, 0, 0, paint);
+
+        return adjustedBitmap;
     }
 
     private String writeImageFile(byte[] imageBytes, int pageIndex) throws IOException {
@@ -281,6 +340,13 @@ public class DocumentScannerPlugin extends Plugin {
         return Math.max(min, Math.min(max, value));
     }
 
+    private float clampFloat(Float value, float min, float max) {
+        if (value == null) {
+            return min;
+        }
+        return Math.max(min, Math.min(max, value));
+    }
+
     private String normalizeResponseType(String value) {
         if (value == null) {
             return RESPONSE_TYPE_FILE_PATH;
@@ -290,6 +356,47 @@ public class DocumentScannerPlugin extends Plugin {
             return normalized;
         }
         return RESPONSE_TYPE_FILE_PATH;
+    }
+
+    private String normalizeScannerMode(String value) {
+        if (value == null) {
+            return SCANNER_MODE_FULL;
+        }
+        String normalized = value.toLowerCase(Locale.ROOT);
+        if (
+            SCANNER_MODE_BASE.equals(normalized) ||
+            SCANNER_MODE_BASE_WITH_FILTER.equals(normalized) ||
+            SCANNER_MODE_FULL.equals(normalized)
+        ) {
+            return normalized;
+        }
+        return SCANNER_MODE_FULL;
+    }
+
+    /**
+     * Determines the ML Kit scanner mode based on scannerMode and letUserAdjustCrop settings.
+     * Note: letUserAdjustCrop requires SCANNER_MODE_FULL, so it takes precedence over scannerMode.
+     * @param scannerMode The requested scanner mode (base, base_with_filter, full)
+     * @param allowAdjustCrop Whether to allow manual crop adjustment
+     * @return The ML Kit scanner mode constant
+     */
+    private int determineScannerMode(String scannerMode, boolean allowAdjustCrop) {
+        // If letUserAdjustCrop is true, we must use SCANNER_MODE_FULL
+        // because only FULL mode supports manual crop adjustment
+        if (allowAdjustCrop) {
+            return GmsDocumentScannerOptions.SCANNER_MODE_FULL;
+        }
+
+        // Otherwise, use the requested scanner mode
+        switch (scannerMode) {
+            case SCANNER_MODE_BASE:
+                return GmsDocumentScannerOptions.SCANNER_MODE_BASE;
+            case SCANNER_MODE_BASE_WITH_FILTER:
+                return GmsDocumentScannerOptions.SCANNER_MODE_BASE_WITH_FILTER;
+            case SCANNER_MODE_FULL:
+            default:
+                return GmsDocumentScannerOptions.SCANNER_MODE_FULL;
+        }
     }
 
     @PluginMethod
