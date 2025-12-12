@@ -276,19 +276,12 @@ public class DocumentScannerPlugin extends Plugin {
      */
     private Bitmap applyBrightnessContrast(Bitmap bitmap, float brightness, float contrast) {
         // Create ColorMatrix for brightness and contrast
-        ColorMatrix colorMatrix = new ColorMatrix(new float[] {
-            contrast, 0, 0, 0, brightness,
-            0, contrast, 0, 0, brightness,
-            0, 0, contrast, 0, brightness,
-            0, 0, 0, 1, 0
-        });
+        ColorMatrix colorMatrix = new ColorMatrix(
+            new float[] { contrast, 0, 0, 0, brightness, 0, contrast, 0, 0, brightness, 0, 0, contrast, 0, brightness, 0, 0, 0, 1, 0 }
+        );
 
         // Create a new bitmap with the same dimensions
-        Bitmap adjustedBitmap = Bitmap.createBitmap(
-            bitmap.getWidth(),
-            bitmap.getHeight(),
-            bitmap.getConfig()
-        );
+        Bitmap adjustedBitmap = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig());
 
         // Apply the color matrix
         Canvas canvas = new Canvas(adjustedBitmap);
@@ -364,9 +357,7 @@ public class DocumentScannerPlugin extends Plugin {
         }
         String normalized = value.toLowerCase(Locale.ROOT);
         if (
-            SCANNER_MODE_BASE.equals(normalized) ||
-            SCANNER_MODE_BASE_WITH_FILTER.equals(normalized) ||
-            SCANNER_MODE_FULL.equals(normalized)
+            SCANNER_MODE_BASE.equals(normalized) || SCANNER_MODE_BASE_WITH_FILTER.equals(normalized) || SCANNER_MODE_FULL.equals(normalized)
         ) {
             return normalized;
         }
