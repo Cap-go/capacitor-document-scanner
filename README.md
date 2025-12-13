@@ -32,6 +32,7 @@ npx cap sync
 
 * [`scanDocument(...)`](#scandocument)
 * [Interfaces](#interfaces)
+* [Type Aliases](#type-aliases)
 * [Enums](#enums)
 
 </docgen-index>
@@ -82,6 +83,14 @@ Opens the device camera and starts the document scanning experience.
 | **`brightness`**          | <code>number</code>                                   | Brightness adjustment applied to scanned images. Range: -255 to 255 (0 = no change, positive = brighter, negative = darker) Useful for compensating low-light scans.                                                                                                                             | <code>0</code>                          |
 | **`contrast`**            | <code>number</code>                                   | Contrast adjustment applied to scanned images. Range: 0.0 to 10.0 (1.0 = no change, &gt;1 = more contrast, &lt;1 = less contrast) Helps improve text clarity in poorly lit scans.                                                                                                                | <code>1.0</code>                        |
 | **`scannerMode`**         | <code><a href="#scannermode">ScannerMode</a></code>   | Android only: scanner mode that controls ML Kit features and filters. - 'base': Basic scan with crop/rotate, no filters or ML cleaning - 'base_with_filter': Adds grayscale and auto-enhancement filters - 'full': All features including ML-based image cleaning (erases stains, fingers, etc.) | <code>ScannerMode.Full</code>           |
+
+
+### Type Aliases
+
+
+#### ResponseType
+
+<code>'basic' | 'cors' | 'default' | 'error' | 'opaque' | 'opaqueredirect'</code>
 
 
 ### Enums
