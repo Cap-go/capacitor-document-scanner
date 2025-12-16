@@ -24,6 +24,7 @@
   "bugs": {
     "url": "https://github.com/Cap-go/capacitor-document-scanner/issues"
   },
+  "homepage": "https://capgo.app/docs/plugins/document-scanner/",
   "keywords": [
     "capacitor",
     "plugin",
