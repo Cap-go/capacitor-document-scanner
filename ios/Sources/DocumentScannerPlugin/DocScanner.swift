@@ -4,7 +4,6 @@ import VisionKit
 /**
  Handles presenting the VisionKit document scanner and returning results.
  */
-@available(iOS 13.0, *)
 class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
     private weak var viewController: UIViewController?
     private var successHandler: ([String]) -> Void
