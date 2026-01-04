@@ -101,10 +101,13 @@ public class DocumentScannerPlugin extends Plugin {
         int quality = clamp(call.getInt("croppedImageQuality", 100), 0, 100);
         String responseType = normalizeResponseType(call.getString("responseType"));
         int pageLimit = clamp(call.getInt("maxNumDocuments", 24), 1, 24);
-        boolean allowAdjustCrop = call.getBoolean("letUserAdjustCrop", true);
         float brightness = clampFloat(call.getFloat("brightness", 0f), -255f, 255f);
         float contrast = clampFloat(call.getFloat("contrast", 1f), 0f, 10f);
         String scannerMode = normalizeScannerMode(call.getString("scannerMode"));
+        // Only default letUserAdjustCrop to true if scannerMode is FULL
+        // This ensures scannerMode takes precedence when explicitly set
+        boolean defaultAllowCrop = SCANNER_MODE_FULL.equals(scannerMode);
+        boolean allowAdjustCrop = call.getBoolean("letUserAdjustCrop", defaultAllowCrop);
 
         GmsDocumentScannerOptions.Builder optionsBuilder = new GmsDocumentScannerOptions.Builder()
             .setGalleryImportAllowed(false)
