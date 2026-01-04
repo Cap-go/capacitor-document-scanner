@@ -1,6 +1,9 @@
 import UIKit
 import VisionKit
 
+/// Global storage for maxNumDocuments limit (used by swizzled method)
+private var documentScanLimit: Int?
+
 /**
  Handles presenting the VisionKit document scanner and returning results.
  */
@@ -13,6 +16,9 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
     private var croppedImageQuality: Int
     private var brightness: Float
     private var contrast: Float
+    private var maxNumDocuments: Int?
+
+    private static var swizzled = false
 
     init(
         _ viewController: UIViewController? = nil,
@@ -22,7 +28,8 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         responseType: String = ResponseType.imageFilePath,
         croppedImageQuality: Int = 100,
         brightness: Float = 0.0,
-        contrast: Float = 1.0
+        contrast: Float = 1.0,
+        maxNumDocuments: Int? = nil
     ) {
         self.viewController = viewController
         self.successHandler = successHandler
@@ -32,16 +39,72 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         self.croppedImageQuality = croppedImageQuality
         self.brightness = brightness
         self.contrast = contrast
+        self.maxNumDocuments = maxNumDocuments
     }
 
     override convenience init() {
         self.init(nil)
     }
 
+    /// Swizzle the internal canAddImages method to enforce document limits
+    private static func setupSwizzling() {
+        guard !swizzled else { return }
+        swizzled = true
+
+        // Find the internal VNDocumentCameraViewController_InProcess class
+        guard let inProcessClass = NSClassFromString("VNDocumentCameraViewController_InProcess") else {
+            return
+        }
+
+        // Selector for the internal delegate method: documentCameraController:canAddImages:
+        let originalSelector = NSSelectorFromString("documentCameraController:canAddImages:")
+        let swizzledSelector = #selector(DocScanner.swizzled_documentCameraController(_:canAddImages:))
+
+        guard let originalMethod = class_getInstanceMethod(inProcessClass, originalSelector),
+              let swizzledMethod = class_getInstanceMethod(DocScanner.self, swizzledSelector) else {
+            return
+        }
+
+        // Add the swizzled method to the target class
+        let didAdd = class_addMethod(
+            inProcessClass,
+            swizzledSelector,
+            method_getImplementation(swizzledMethod),
+            method_getTypeEncoding(swizzledMethod)
+        )
+
+        if didAdd {
+            guard let newSwizzledMethod = class_getInstanceMethod(inProcessClass, swizzledSelector) else {
+                return
+            }
+            method_exchangeImplementations(originalMethod, newSwizzledMethod)
+        } else {
+            method_exchangeImplementations(originalMethod, swizzledMethod)
+        }
+    }
+
+    /// Swizzled implementation that enforces document limits
+    @objc dynamic func swizzled_documentCameraController(_ controller: AnyObject, canAddImages count: UInt64) -> Bool {
+        // Check if we have a limit set
+        if let limit = documentScanLimit, count >= limit {
+            return false
+        }
+        // Call the original implementation (swizzled, so this calls original)
+        return swizzled_documentCameraController(controller, canAddImages: count)
+    }
+
     func startScan() {
         guard VNDocumentCameraViewController.isSupported else {
             errorHandler("Document scanning is not supported on this device.")
             return
+        }
+
+        // Set the global limit and setup swizzling if we have a limit
+        if let limit = maxNumDocuments, limit > 0 {
+            documentScanLimit = limit
+            DocScanner.setupSwizzling()
+        } else {
+            documentScanLimit = nil
         }
 
         DispatchQueue.main.async {
@@ -59,7 +122,8 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         responseType: String? = ResponseType.imageFilePath,
         croppedImageQuality: Int? = 100,
         brightness: Float? = 0.0,
-        contrast: Float? = 1.0
+        contrast: Float? = 1.0,
+        maxNumDocuments: Int? = nil
     ) {
         self.viewController = viewController
         self.successHandler = successHandler
@@ -69,6 +133,7 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         self.croppedImageQuality = croppedImageQuality ?? 100
         self.brightness = brightness ?? 0.0
         self.contrast = contrast ?? 1.0
+        self.maxNumDocuments = maxNumDocuments
 
         startScan()
     }
@@ -79,7 +144,10 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
     ) {
         var results: [String] = []
 
-        for pageNumber in 0 ..< scan.pageCount {
+        // Limit pages to maxNumDocuments if specified
+        let pageLimit = maxNumDocuments != nil ? min(scan.pageCount, maxNumDocuments!) : scan.pageCount
+
+        for pageNumber in 0 ..< pageLimit {
             var processedImage = scan.imageOfPage(at: pageNumber)
 
             // Apply brightness and contrast adjustments if needed

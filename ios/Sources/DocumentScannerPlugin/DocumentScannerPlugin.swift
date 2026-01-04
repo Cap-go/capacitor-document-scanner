@@ -3,7 +3,7 @@ import Foundation
 
 @objc(DocumentScannerPlugin)
 public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
-    private let pluginVersion: String = "8.1.4"
+    private let pluginVersion: String = "8.2.0"
     public let identifier = "DocumentScannerPlugin"
     public let jsName = "DocumentScanner"
     public let pluginMethods: [CAPPluginMethod] = [
@@ -41,7 +41,8 @@ public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
             responseType: call.getString("responseType") ?? ResponseType.imageFilePath,
             croppedImageQuality: clampQuality(call.getInt("croppedImageQuality")),
             brightness: clampBrightness(call.getFloat("brightness")),
-            contrast: clampContrast(call.getFloat("contrast"))
+            contrast: clampContrast(call.getFloat("contrast")),
+            maxNumDocuments: call.getInt("maxNumDocuments")
         )
 
         documentScanner?.startScan()

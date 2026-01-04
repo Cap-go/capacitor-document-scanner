@@ -20,8 +20,11 @@ export interface ScanDocumentOptions {
   letUserAdjustCrop?: boolean;
 
   /**
-   * Android only: maximum number of documents the user can scan.
-   * @default 24
+   * Maximum number of documents to scan.
+   * On Android: limits documents the user can scan (1-24).
+   * On iOS: prevents scanning more than the specified number of pages (uses internal API swizzling).
+   * Set to 1 for single-scan mode where the scanner stops after one document.
+   * @default 24 on Android, unlimited on iOS
    */
   maxNumDocuments?: number;
 
