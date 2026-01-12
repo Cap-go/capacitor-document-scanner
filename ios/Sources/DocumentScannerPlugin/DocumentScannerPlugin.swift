@@ -3,7 +3,7 @@ import Foundation
 
 @objc(DocumentScannerPlugin)
 public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
-    private let pluginVersion: String = "8.3.0"
+    private let pluginVersion: String = "8.3.1"
     public let identifier = "DocumentScannerPlugin"
     public let jsName = "DocumentScanner"
     public let pluginMethods: [CAPPluginMethod] = [
