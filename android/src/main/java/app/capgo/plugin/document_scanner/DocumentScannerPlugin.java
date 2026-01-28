@@ -10,6 +10,7 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Base64;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultLauncher;
@@ -89,6 +90,16 @@ public class DocumentScannerPlugin extends Plugin {
 
         if (pendingScan != null) {
             call.reject("Another scan is in progress.");
+            return;
+        }
+
+        // Check if running on emulator
+        if (isRunningOnEmulator()) {
+            call.reject(
+                "Document scanner is not supported on Android emulators. " +
+                "The ML Kit Document Scanner requires a physical device with a hardware camera. " +
+                "Please test on a real Android device."
+            );
             return;
         }
 
@@ -391,6 +402,26 @@ public class DocumentScannerPlugin extends Plugin {
             default:
                 return GmsDocumentScannerOptions.SCANNER_MODE_FULL;
         }
+    }
+
+    /**
+     * Detects if the app is running on an Android emulator.
+     * Uses multiple heuristics to reliably detect emulator environments.
+     * @return true if running on an emulator, false otherwise
+     */
+    private boolean isRunningOnEmulator() {
+        return (
+            Build.FINGERPRINT.startsWith("generic") ||
+            Build.FINGERPRINT.startsWith("unknown") ||
+            Build.MODEL.contains("google_sdk") ||
+            Build.MODEL.contains("Emulator") ||
+            Build.MODEL.contains("Android SDK built for x86") ||
+            Build.MANUFACTURER.contains("Genymotion") ||
+            (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")) ||
+            "google_sdk".equals(Build.PRODUCT) ||
+            Build.PRODUCT.contains("sdk_gphone") ||
+            Build.PRODUCT.contains("emulator")
+        );
     }
 
     @PluginMethod
