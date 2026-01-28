@@ -410,17 +410,22 @@ public class DocumentScannerPlugin extends Plugin {
      * @return true if running on an emulator, false otherwise
      */
     private boolean isRunningOnEmulator() {
+        String model = Build.MODEL.toLowerCase(Locale.ROOT);
+        String product = Build.PRODUCT.toLowerCase(Locale.ROOT);
+        String fingerprint = Build.FINGERPRINT.toLowerCase(Locale.ROOT);
+        String manufacturer = Build.MANUFACTURER.toLowerCase(Locale.ROOT);
+        
         return (
-            Build.FINGERPRINT.startsWith("generic") ||
-            Build.FINGERPRINT.startsWith("unknown") ||
-            Build.MODEL.contains("google_sdk") ||
-            Build.MODEL.contains("Emulator") ||
-            Build.MODEL.contains("Android SDK built for x86") ||
-            Build.MANUFACTURER.contains("Genymotion") ||
+            fingerprint.startsWith("generic") ||
+            fingerprint.startsWith("unknown") ||
+            model.contains("google_sdk") ||
+            model.contains("emulator") ||
+            model.contains("android sdk built for x86") ||
+            manufacturer.contains("genymotion") ||
             (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")) ||
-            "google_sdk".equals(Build.PRODUCT) ||
-            Build.PRODUCT.contains("sdk_gphone") ||
-            Build.PRODUCT.contains("emulator")
+            "google_sdk".equals(product) ||
+            product.contains("sdk_gphone") ||
+            product.contains("emulator")
         );
     }
 
