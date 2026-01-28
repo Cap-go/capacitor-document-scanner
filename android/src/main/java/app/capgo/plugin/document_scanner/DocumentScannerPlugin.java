@@ -414,7 +414,9 @@ public class DocumentScannerPlugin extends Plugin {
         String product = Build.PRODUCT.toLowerCase(Locale.ROOT);
         String fingerprint = Build.FINGERPRINT.toLowerCase(Locale.ROOT);
         String manufacturer = Build.MANUFACTURER.toLowerCase(Locale.ROOT);
-        
+        String brand = Build.BRAND.toLowerCase(Locale.ROOT);
+        String device = Build.DEVICE.toLowerCase(Locale.ROOT);
+
         return (
             fingerprint.startsWith("generic") ||
             fingerprint.startsWith("unknown") ||
@@ -422,7 +424,7 @@ public class DocumentScannerPlugin extends Plugin {
             model.contains("emulator") ||
             model.contains("android sdk built for x86") ||
             manufacturer.contains("genymotion") ||
-            (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")) ||
+            (brand.startsWith("generic") && device.startsWith("generic")) ||
             "google_sdk".equals(product) ||
             product.contains("sdk_gphone") ||
             product.contains("emulator")
