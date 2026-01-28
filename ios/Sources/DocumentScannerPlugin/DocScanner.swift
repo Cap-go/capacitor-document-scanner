@@ -185,16 +185,16 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
             }
         }
 
-        goBackToPreviousView(controller)
-        // Clear the global limit after scan completes
+        // Clear the global limit before dismissing to avoid race conditions
         documentScanLimit = nil
+        goBackToPreviousView(controller)
         successHandler(results)
     }
 
     func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
-        goBackToPreviousView(controller)
-        // Clear the global limit after scan is cancelled
+        // Clear the global limit before dismissing to avoid race conditions
         documentScanLimit = nil
+        goBackToPreviousView(controller)
         cancelHandler()
     }
 
@@ -202,9 +202,9 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         _ controller: VNDocumentCameraViewController,
         didFailWithError error: Error
     ) {
-        goBackToPreviousView(controller)
-        // Clear the global limit after scan fails
+        // Clear the global limit before dismissing to avoid race conditions
         documentScanLimit = nil
+        goBackToPreviousView(controller)
         errorHandler(error.localizedDescription)
     }
 
