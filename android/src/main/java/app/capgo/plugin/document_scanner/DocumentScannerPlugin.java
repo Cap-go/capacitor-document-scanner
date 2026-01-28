@@ -97,8 +97,8 @@ public class DocumentScannerPlugin extends Plugin {
         if (isRunningOnEmulator()) {
             call.reject(
                 "Document scanner is not supported on Android emulators. " +
-                "The ML Kit Document Scanner requires a physical device with a hardware camera. " +
-                "Please test on a real Android device."
+                    "The ML Kit Document Scanner requires a physical device with a hardware camera. " +
+                    "Please test on a real Android device."
             );
             return;
         }
