@@ -86,7 +86,7 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
     /// Swizzled implementation that enforces document limits
     @objc dynamic func swizzled_documentCameraController(_ controller: AnyObject, canAddImages count: UInt64) -> Bool {
         // Check if we have a limit set
-        if let limit = documentScanLimit, count >= limit {
+        if let limit = documentScanLimit, count >= UInt64(limit) {
             return false
         }
         // Call the original implementation (swizzled, so this calls original)
@@ -186,11 +186,15 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         }
 
         goBackToPreviousView(controller)
+        // Clear the global limit after scan completes
+        documentScanLimit = nil
         successHandler(results)
     }
 
     func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
         goBackToPreviousView(controller)
+        // Clear the global limit after scan is cancelled
+        documentScanLimit = nil
         cancelHandler()
     }
 
@@ -199,6 +203,8 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
         didFailWithError error: Error
     ) {
         goBackToPreviousView(controller)
+        // Clear the global limit after scan fails
+        documentScanLimit = nil
         errorHandler(error.localizedDescription)
     }
 
