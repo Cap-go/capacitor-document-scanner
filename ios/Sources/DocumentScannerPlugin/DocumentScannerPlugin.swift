@@ -42,7 +42,7 @@ public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
             croppedImageQuality: clampQuality(call.getInt("croppedImageQuality")),
             brightness: clampBrightness(call.getFloat("brightness")),
             contrast: clampContrast(call.getFloat("contrast")),
-            maxNumDocuments: call.getInt("maxNumDocuments")
+            maxNumDocuments: validateMaxNumDocuments(call.getInt("maxNumDocuments"))
         )
 
         documentScanner?.startScan()
@@ -61,6 +61,14 @@ public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
     private func clampContrast(_ value: Float?) -> Float {
         let contrast = value ?? 1.0
         return max(0.0, min(10.0, contrast))
+    }
+
+    private func validateMaxNumDocuments(_ value: Int?) -> Int? {
+        guard let limit = value else {
+            return nil
+        }
+        // Only return limit if it's positive, otherwise return nil (unlimited)
+        return limit > 0 ? limit : nil
     }
 
     @objc func getPluginVersion(_ call: CAPPluginCall) {
