@@ -10,6 +10,7 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Base64;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultLauncher;
@@ -89,6 +90,16 @@ public class DocumentScannerPlugin extends Plugin {
 
         if (pendingScan != null) {
             call.reject("Another scan is in progress.");
+            return;
+        }
+
+        // Check if running on emulator
+        if (isRunningOnEmulator()) {
+            call.reject(
+                "Document scanner is not supported on Android emulators. " +
+                    "The ML Kit Document Scanner requires a physical device with a hardware camera. " +
+                    "Please test on a real Android device."
+            );
             return;
         }
 
@@ -391,6 +402,33 @@ public class DocumentScannerPlugin extends Plugin {
             default:
                 return GmsDocumentScannerOptions.SCANNER_MODE_FULL;
         }
+    }
+
+    /**
+     * Detects if the app is running on an Android emulator.
+     * Uses multiple heuristics to reliably detect emulator environments.
+     * @return true if running on an emulator, false otherwise
+     */
+    private boolean isRunningOnEmulator() {
+        String model = Build.MODEL.toLowerCase(Locale.ROOT);
+        String product = Build.PRODUCT.toLowerCase(Locale.ROOT);
+        String fingerprint = Build.FINGERPRINT.toLowerCase(Locale.ROOT);
+        String manufacturer = Build.MANUFACTURER.toLowerCase(Locale.ROOT);
+        String brand = Build.BRAND.toLowerCase(Locale.ROOT);
+        String device = Build.DEVICE.toLowerCase(Locale.ROOT);
+
+        return (
+            fingerprint.startsWith("generic") ||
+            fingerprint.startsWith("unknown") ||
+            model.contains("google_sdk") ||
+            model.contains("emulator") ||
+            model.contains("android sdk built for x86") ||
+            manufacturer.contains("genymotion") ||
+            (brand.startsWith("generic") && device.startsWith("generic")) ||
+            "google_sdk".equals(product) ||
+            product.contains("sdk_gphone") ||
+            product.contains("emulator")
+        );
     }
 
     @PluginMethod
