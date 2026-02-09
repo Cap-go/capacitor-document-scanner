@@ -95,13 +95,7 @@ public class DocumentScannerPlugin extends Plugin {
             return;
         }
 
-        Activity activity = getActivity();
-        if (activity == null) {
-            call.reject("Activity reference is unavailable.");
-            return;
-        }
-
-        // Check if running on emulator
+        // Check if running on emulator first (doesn't require activity reference)
         if (isRunningOnEmulator()) {
             call.reject(
                 "Document scanner is not supported on Android emulators. " +
@@ -111,12 +105,19 @@ public class DocumentScannerPlugin extends Plugin {
             return;
         }
 
+        Activity activity = getActivity();
+        if (activity == null) {
+            call.reject("Activity reference is unavailable.");
+            return;
+        }
+
         // Check Google Play Services availability
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
         int resultCode = apiAvailability.isGooglePlayServicesAvailable(activity);
         if (resultCode != ConnectionResult.SUCCESS) {
-            StringBuilder errorMessage = new StringBuilder("Google Play Services is not available or needs an update. ");
-            errorMessage.append("The ML Kit Document Scanner requires Google Play Services. ");
+            StringBuilder errorMessage = new StringBuilder(
+                "The ML Kit Document Scanner requires Google Play Services, which is not available or needs an update. "
+            );
             if (apiAvailability.isUserResolvableError(resultCode)) {
                 errorMessage.append("Please update Google Play Services and try again.");
             } else {
@@ -461,9 +462,9 @@ public class DocumentScannerPlugin extends Plugin {
         // Emulators often have "emulator" or "unknown" in their serial number
         if (!isEmulator) {
             try {
-                String buildSerial = Build.SERIAL;
-                if (buildSerial != null) {
-                    String serial = buildSerial.toLowerCase(Locale.ROOT);
+                String serial = Build.SERIAL;
+                if (serial != null) {
+                    serial = serial.toLowerCase(Locale.ROOT);
                     isEmulator = serial.contains("emulator") || serial.equals("unknown");
                 }
             } catch (SecurityException e) {
