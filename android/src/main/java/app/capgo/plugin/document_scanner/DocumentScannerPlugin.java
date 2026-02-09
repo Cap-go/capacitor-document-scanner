@@ -445,7 +445,6 @@ public class DocumentScannerPlugin extends Plugin {
             model.contains("android sdk built for x86") ||
             model.contains("sdk_gphone") ||
             manufacturer.contains("genymotion") ||
-            (manufacturer.equals("google") && (device.startsWith("generic") || device.contains("_sdk_"))) ||
             (brand.startsWith("generic") && device.startsWith("generic")) ||
             "google_sdk".equals(product) ||
             product.contains("sdk_gphone") ||
@@ -458,13 +457,14 @@ public class DocumentScannerPlugin extends Plugin {
             board.contains("goldfish") ||
             board.contains("qemu"));
 
-        // Additional check: Build.SERIAL property (often contains emulator indicators)
+        // Additional check: Build.SERIAL property for common emulator identifiers
+        // Emulators often have "emulator" or "unknown" in their serial number
         if (!isEmulator) {
             try {
                 String buildSerial = Build.SERIAL;
                 if (buildSerial != null) {
                     String serial = buildSerial.toLowerCase(Locale.ROOT);
-                    isEmulator = serial.contains("emulator") || serial.contains("unknown");
+                    isEmulator = serial.contains("emulator") || serial.equals("unknown");
                 }
             } catch (Exception e) {
                 // Ignore if Build.SERIAL is not accessible
