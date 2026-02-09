@@ -115,9 +115,8 @@ public class DocumentScannerPlugin extends Plugin {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
         int resultCode = apiAvailability.isGooglePlayServicesAvailable(activity);
         if (resultCode != ConnectionResult.SUCCESS) {
-            StringBuilder errorMessage = new StringBuilder(
-                "Google Play Services is not available or needs an update. " + "The ML Kit Document Scanner requires Google Play Services. "
-            );
+            StringBuilder errorMessage = new StringBuilder("Google Play Services is not available or needs an update. ");
+            errorMessage.append("The ML Kit Document Scanner requires Google Play Services. ");
             if (apiAvailability.isUserResolvableError(resultCode)) {
                 errorMessage.append("Please update Google Play Services and try again.");
             } else {
