@@ -23,6 +23,8 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanner;
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions;
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning;
@@ -93,7 +95,7 @@ public class DocumentScannerPlugin extends Plugin {
             return;
         }
 
-        // Check if running on emulator
+        // Check if running on emulator first (doesn't require activity reference)
         if (isRunningOnEmulator()) {
             call.reject(
                 "Document scanner is not supported on Android emulators. " +
@@ -106,6 +108,22 @@ public class DocumentScannerPlugin extends Plugin {
         Activity activity = getActivity();
         if (activity == null) {
             call.reject("Activity reference is unavailable.");
+            return;
+        }
+
+        // Check Google Play Services availability
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        int resultCode = apiAvailability.isGooglePlayServicesAvailable(activity);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            StringBuilder errorMessage = new StringBuilder(
+                "The ML Kit Document Scanner requires Google Play Services, which is not available or needs an update. "
+            );
+            if (apiAvailability.isUserResolvableError(resultCode)) {
+                errorMessage.append("Please update Google Play Services and try again.");
+            } else {
+                errorMessage.append("This device may not support the document scanner.");
+            }
+            call.reject(errorMessage.toString());
             return;
         }
 
@@ -419,22 +437,42 @@ public class DocumentScannerPlugin extends Plugin {
         String hardware = Build.HARDWARE.toLowerCase(Locale.ROOT);
         String board = Build.BOARD.toLowerCase(Locale.ROOT);
 
-        return (
-            fingerprint.startsWith("generic") ||
+        // Check for emulator characteristics
+        boolean isEmulator = (fingerprint.startsWith("generic") ||
             fingerprint.startsWith("unknown") ||
+            fingerprint.contains("test-keys") ||
             model.contains("google_sdk") ||
             model.contains("emulator") ||
             model.contains("android sdk built for x86") ||
+            model.contains("sdk_gphone") ||
             manufacturer.contains("genymotion") ||
             (brand.startsWith("generic") && device.startsWith("generic")) ||
             "google_sdk".equals(product) ||
             product.contains("sdk_gphone") ||
+            product.contains("sdk_google") ||
             product.contains("emulator") ||
+            product.contains("vbox") ||
             hardware.contains("ranchu") ||
             hardware.contains("goldfish") ||
             board.contains("ranchu") ||
-            board.contains("goldfish")
-        );
+            board.contains("goldfish") ||
+            board.contains("qemu"));
+
+        // Additional check: Build.SERIAL property for common emulator identifiers
+        // Emulators often have "emulator" or "unknown" in their serial number
+        if (!isEmulator) {
+            try {
+                String serial = Build.SERIAL;
+                if (serial != null) {
+                    serial = serial.toLowerCase(Locale.ROOT);
+                    isEmulator = serial.contains("emulator") || serial.equals("unknown");
+                }
+            } catch (SecurityException e) {
+                // Ignore if Build.SERIAL access is restricted (Android 8.0+)
+            }
+        }
+
+        return isEmulator;
     }
 
     @PluginMethod

@@ -29,6 +29,22 @@ npm install @capgo/capacitor-document-scanner
 npx cap sync
 ```
 
+## Important Notes
+
+### Android Emulator Limitations
+
+The ML Kit Document Scanner **does not work on Android emulators**. This is a limitation of Google Play Services and ML Kit on emulated devices. When testing your app:
+
+- ✅ Use a **physical Android device** for testing document scanning
+- ❌ Android emulators will show an error: "Document scanner is not supported on Android emulators"
+
+This limitation is due to:
+- Google Play Services compatibility issues with emulator environments
+- ML Kit Document Scanner requiring actual hardware camera capabilities
+- Emulators lacking the necessary ML Kit runtime components
+
+**For development and testing, always use a real Android device.**
+
 ## Demo
 
 ### Scanning one note
