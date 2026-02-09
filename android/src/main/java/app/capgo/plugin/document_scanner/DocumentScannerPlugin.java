@@ -466,8 +466,8 @@ public class DocumentScannerPlugin extends Plugin {
                     String serial = buildSerial.toLowerCase(Locale.ROOT);
                     isEmulator = serial.contains("emulator") || serial.equals("unknown");
                 }
-            } catch (Exception e) {
-                // Ignore if Build.SERIAL is not accessible
+            } catch (SecurityException e) {
+                // Ignore if Build.SERIAL access is restricted (Android 8.0+)
             }
         }
 
