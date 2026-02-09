@@ -445,7 +445,7 @@ public class DocumentScannerPlugin extends Plugin {
             model.contains("android sdk built for x86") ||
             model.contains("sdk_gphone") ||
             manufacturer.contains("genymotion") ||
-            (manufacturer.contains("google") && device.contains("generic")) ||
+            (manufacturer.equals("google") && (device.startsWith("generic") || device.contains("_sdk_"))) ||
             (brand.startsWith("generic") && device.startsWith("generic")) ||
             "google_sdk".equals(product) ||
             product.contains("sdk_gphone") ||
