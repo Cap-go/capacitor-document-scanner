@@ -115,15 +115,15 @@ public class DocumentScannerPlugin extends Plugin {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
         int resultCode = apiAvailability.isGooglePlayServicesAvailable(activity);
         if (resultCode != ConnectionResult.SUCCESS) {
-            String errorMessage =
-                "Google Play Services is not available or needs an update. " +
-                "The ML Kit Document Scanner requires Google Play Services. ";
+            StringBuilder errorMessage = new StringBuilder(
+                "Google Play Services is not available or needs an update. " + "The ML Kit Document Scanner requires Google Play Services. "
+            );
             if (apiAvailability.isUserResolvableError(resultCode)) {
-                errorMessage += "Please update Google Play Services and try again.";
+                errorMessage.append("Please update Google Play Services and try again.");
             } else {
-                errorMessage += "This device may not support the document scanner.";
+                errorMessage.append("This device may not support the document scanner.");
             }
-            call.reject(errorMessage);
+            call.reject(errorMessage.toString());
             return;
         }
 
@@ -459,7 +459,7 @@ public class DocumentScannerPlugin extends Plugin {
             board.contains("goldfish") ||
             board.contains("qemu"));
 
-        // Additional check: AVD name environment variable (often set in emulators)
+        // Additional check: Build.SERIAL property (often contains emulator indicators)
         if (!isEmulator) {
             try {
                 String buildSerial = Build.SERIAL;
