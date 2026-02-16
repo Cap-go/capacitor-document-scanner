@@ -439,7 +439,7 @@ public class DocumentScannerPlugin extends Plugin {
 
         // Check for emulator characteristics
         boolean isEmulator = (fingerprint.startsWith("generic") ||
-            fingerprint.startsWith("unknown") ||
+            // Avoid treating fingerprint == "unknown" as an emulator marker: some real devices report that.
             fingerprint.contains("test-keys") ||
             model.contains("google_sdk") ||
             model.contains("emulator") ||
