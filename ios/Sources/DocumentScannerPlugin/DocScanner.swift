@@ -86,7 +86,9 @@ class DocScanner: NSObject, VNDocumentCameraViewControllerDelegate {
     /// Swizzled implementation that enforces document limits
     @objc dynamic func swizzled_documentCameraController(_ controller: AnyObject, canAddImages count: UInt64) -> Bool {
         // Check if we have a limit set
-        if let limit = documentScanLimit, count >= UInt64(limit) {
+        // count represents the total number of pages that would exist after adding
+        // Allow adding if count would not exceed the limit
+        if let limit = documentScanLimit, count > UInt64(limit) {
             return false
         }
         // Call the original implementation (swizzled, so this calls original)
