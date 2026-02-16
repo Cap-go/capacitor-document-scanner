@@ -459,13 +459,15 @@ public class DocumentScannerPlugin extends Plugin {
             board.contains("qemu"));
 
         // Additional check: Build.SERIAL property for common emulator identifiers
-        // Emulators often have "emulator" or "unknown" in their serial number
+        // Emulators often have "emulator" in their serial number
+        // Note: We don't check for "unknown" as some real devices (e.g., OnePlus PJX110)
+        // have "unknown" as their serial for privacy/security reasons
         if (!isEmulator) {
             try {
                 String serial = Build.SERIAL;
                 if (serial != null) {
                     serial = serial.toLowerCase(Locale.ROOT);
-                    isEmulator = serial.contains("emulator") || serial.equals("unknown");
+                    isEmulator = serial.contains("emulator");
                 }
             } catch (SecurityException e) {
                 // Ignore if Build.SERIAL access is restricted (Android 8.0+)
