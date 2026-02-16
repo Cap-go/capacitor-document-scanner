@@ -458,6 +458,20 @@ public class DocumentScannerPlugin extends Plugin {
             board.contains("goldfish") ||
             board.contains("qemu"));
 
+        // Additional check: some emulators expose a serial containing "emulator".
+        // Avoid treating serial == "unknown" as an emulator marker: some real devices report that.
+        if (!isEmulator) {
+            try {
+                String serial = Build.SERIAL;
+                if (serial != null) {
+                    serial = serial.toLowerCase(Locale.ROOT);
+                    isEmulator = serial.contains("emulator");
+                }
+            } catch (SecurityException ignored) {
+                // Ignore if Build.SERIAL access is restricted (Android 8.0+)
+            }
+        }
+
         return isEmulator;
     }
 
