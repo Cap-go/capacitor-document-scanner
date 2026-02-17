@@ -424,55 +424,29 @@ public class DocumentScannerPlugin extends Plugin {
 
     /**
      * Detects if the app is running on an Android emulator.
-     * Uses multiple heuristics to reliably detect emulator environments.
+     * Mirrors capacitor-updater logic exactly.
      * @return true if running on an emulator, false otherwise
      */
     private boolean isRunningOnEmulator() {
-        String model = Build.MODEL.toLowerCase(Locale.ROOT);
-        String product = Build.PRODUCT.toLowerCase(Locale.ROOT);
-        String fingerprint = Build.FINGERPRINT.toLowerCase(Locale.ROOT);
-        String manufacturer = Build.MANUFACTURER.toLowerCase(Locale.ROOT);
-        String brand = Build.BRAND.toLowerCase(Locale.ROOT);
-        String device = Build.DEVICE.toLowerCase(Locale.ROOT);
-        String hardware = Build.HARDWARE.toLowerCase(Locale.ROOT);
-        String board = Build.BOARD.toLowerCase(Locale.ROOT);
-
-        // Check for emulator characteristics
-        boolean isEmulator = (fingerprint.startsWith("generic") ||
-            // Avoid treating fingerprint == "unknown" as an emulator marker: some real devices report that.
-            fingerprint.contains("test-keys") ||
-            model.contains("google_sdk") ||
-            model.contains("emulator") ||
-            model.contains("android sdk built for x86") ||
-            model.contains("sdk_gphone") ||
-            manufacturer.contains("genymotion") ||
-            (brand.startsWith("generic") && device.startsWith("generic")) ||
-            "google_sdk".equals(product) ||
-            product.contains("sdk_gphone") ||
-            product.contains("sdk_google") ||
-            product.contains("emulator") ||
-            product.contains("vbox") ||
-            hardware.contains("ranchu") ||
-            hardware.contains("goldfish") ||
-            board.contains("ranchu") ||
-            board.contains("goldfish") ||
-            board.contains("qemu"));
-
-        // Additional check: some emulators expose a serial containing "emulator".
-        // Avoid treating serial == "unknown" as an emulator marker: some real devices report that.
-        if (!isEmulator) {
-            try {
-                String serial = Build.SERIAL;
-                if (serial != null) {
-                    serial = serial.toLowerCase(Locale.ROOT);
-                    isEmulator = serial.contains("emulator");
-                }
-            } catch (SecurityException ignored) {
-                // Ignore if Build.SERIAL access is restricted (Android 8.0+)
-            }
-        }
-
-        return isEmulator;
+        return (
+            (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")) ||
+            Build.FINGERPRINT.startsWith("generic") ||
+            Build.FINGERPRINT.startsWith("unknown") ||
+            Build.HARDWARE.contains("goldfish") ||
+            Build.HARDWARE.contains("ranchu") ||
+            Build.MODEL.contains("google_sdk") ||
+            Build.MODEL.contains("Emulator") ||
+            Build.MODEL.contains("Android SDK built for x86") ||
+            Build.MANUFACTURER.contains("Genymotion") ||
+            Build.PRODUCT.contains("sdk_google") ||
+            Build.PRODUCT.contains("google_sdk") ||
+            Build.PRODUCT.contains("sdk") ||
+            Build.PRODUCT.contains("sdk_x86") ||
+            Build.PRODUCT.contains("sdk_gphone64_arm64") ||
+            Build.PRODUCT.contains("vbox86p") ||
+            Build.PRODUCT.contains("emulator") ||
+            Build.PRODUCT.contains("simulator")
+        );
     }
 
     @PluginMethod
