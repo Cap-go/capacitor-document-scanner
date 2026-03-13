@@ -1,5 +1,8 @@
 name: GitHub Releases to Discord
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   release:
     types: [published]
