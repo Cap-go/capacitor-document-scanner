@@ -33,10 +33,11 @@ export interface ScanDocumentOptions {
 
   /**
    * Maximum number of documents to scan.
-   * On Android: limits documents the user can scan (1-24).
-   * On iOS: limits the number of captured pages in the hacked native VisionKit flow.
+   * On iOS: VisionKit caps scans at 24 pages (system limit), and the hacked native flow
+   * can still stop earlier when you pass a smaller limit.
+   * On Android: customizable limit; defaults to 20 for performance (clamped 1-24).
    * Set to 1 for single-scan mode where the scanner stops after one document.
-   * @default 24 on Android, unlimited on iOS
+   * @default 20 on Android, 24 on iOS
    */
   maxNumDocuments?: number;
 
