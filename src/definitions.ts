@@ -13,16 +13,28 @@ export interface ScanDocumentOptions {
   croppedImageQuality?: number;
 
   /**
-   * Android only: allow the user to adjust the detected crop before saving.
-   * Disabling this forces single-document capture.
+   * Allow the user to adjust the detected crop before saving.
+   * On iOS this forces the native VisionKit preview/editor after each capture using
+   * the private VisionKit navigation hooks needed to keep the scanner flow alive.
+   * On Android this enables ML Kit's crop adjustment flow.
    * @default true
    */
   letUserAdjustCrop?: boolean;
 
   /**
+   * When enabled, shows the current scanned page before continuing so the user can
+   * review it and explicitly continue or finish the flow.
+   * On iOS this forces the native VisionKit preview/editor between captures.
+   * On Android this switches to a one-page-at-a-time flow between ML Kit sessions.
+   * The review/editor screen is still shown automatically when the scan limit is reached.
+   * @default false
+   */
+  reviewCapturedDocument?: boolean;
+
+  /**
    * Maximum number of documents to scan.
    * On Android: limits documents the user can scan (1-24).
-   * On iOS: prevents scanning more than the specified number of pages (uses internal API swizzling).
+   * On iOS: limits the number of captured pages in the hacked native VisionKit flow.
    * Set to 1 for single-scan mode where the scanner stops after one document.
    * @default 24 on Android, unlimited on iOS
    */

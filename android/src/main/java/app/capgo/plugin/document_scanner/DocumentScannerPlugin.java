@@ -1,6 +1,7 @@
 package app.capgo.plugin.documentscanner;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -12,6 +13,11 @@ import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Base64;
+import android.util.TypedValue;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.IntentSenderRequest;
@@ -64,13 +70,29 @@ public class DocumentScannerPlugin extends Plugin {
         private final int quality;
         private final float brightness;
         private final float contrast;
+        private final int requestedPageLimit;
+        private final int scannerMode;
+        private final boolean reviewCapturedDocument;
+        private final List<File> acceptedPageFiles = new ArrayList<>();
 
-        PendingScan(String callId, String responseType, int quality, float brightness, float contrast) {
+        PendingScan(
+            String callId,
+            String responseType,
+            int quality,
+            float brightness,
+            float contrast,
+            int requestedPageLimit,
+            int scannerMode,
+            boolean reviewCapturedDocument
+        ) {
             this.callId = callId;
             this.responseType = responseType;
             this.quality = quality;
             this.brightness = brightness;
             this.contrast = contrast;
+            this.requestedPageLimit = requestedPageLimit;
+            this.scannerMode = scannerMode;
+            this.reviewCapturedDocument = reviewCapturedDocument;
         }
     }
 
@@ -133,25 +155,89 @@ public class DocumentScannerPlugin extends Plugin {
         float brightness = clampFloat(call.getFloat("brightness", 0f), -255f, 255f);
         float contrast = clampFloat(call.getFloat("contrast", 1f), 0f, 10f);
         String scannerMode = normalizeScannerMode(call.getString("scannerMode"));
+        boolean reviewCapturedDocument = call.getBoolean("reviewCapturedDocument", false);
         // Only default letUserAdjustCrop to true if scannerMode is FULL
         // This ensures scannerMode takes precedence when explicitly set
         boolean defaultAllowCrop = SCANNER_MODE_FULL.equals(scannerMode);
         boolean allowAdjustCrop = call.getBoolean("letUserAdjustCrop", defaultAllowCrop);
 
-        GmsDocumentScannerOptions.Builder optionsBuilder = new GmsDocumentScannerOptions.Builder()
-            .setGalleryImportAllowed(false)
-            .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
-            .setPageLimit(pageLimit);
-
         // Determine scanner mode based on scannerMode parameter and letUserAdjustCrop
         int mlKitScannerMode = determineScannerMode(scannerMode, allowAdjustCrop);
-        optionsBuilder.setScannerMode(mlKitScannerMode);
-
-        GmsDocumentScanner scanner = GmsDocumentScanning.getClient(optionsBuilder.build());
 
         bridge.saveCall(call);
-        pendingScan = new PendingScan(call.getCallbackId(), responseType, quality, brightness, contrast);
+        pendingScan = new PendingScan(
+            call.getCallbackId(),
+            responseType,
+            quality,
+            brightness,
+            contrast,
+            pageLimit,
+            mlKitScannerMode,
+            reviewCapturedDocument
+        );
 
+        startScanner(activity, call);
+    }
+
+    private void handleScanResult(ActivityResult result) {
+        PluginCall call = getPendingCall();
+        if (call == null) {
+            return;
+        }
+
+        if (result.getResultCode() != Activity.RESULT_OK) {
+            handleScanCanceled(call);
+            return;
+        }
+
+        Intent data = result.getData();
+        if (data == null) {
+            call.reject("Document scanner returned no data.");
+            releasePendingCall(call);
+            return;
+        }
+
+        GmsDocumentScanningResult scanningResult = GmsDocumentScanningResult.fromActivityResultIntent(data);
+        if (scanningResult == null) {
+            call.reject("Unable to parse document scan result.");
+            releasePendingCall(call);
+            return;
+        }
+
+        try {
+            if (pendingScan != null && pendingScan.reviewCapturedDocument) {
+                handleReviewedCaptureResult(call, scanningResult);
+                return;
+            }
+
+            List<String> scannedImages = processScanResult(scanningResult);
+            JSObject response = new JSObject();
+            response.put("status", "success");
+            response.put("scannedImages", new JSArray(scannedImages));
+            call.resolve(response);
+            releasePendingCall(call);
+        } catch (IOException ioException) {
+            call.reject("Failed to process scanned images: " + ioException.getLocalizedMessage(), ioException);
+            releasePendingCall(call);
+        }
+    }
+
+    private void startScanner(Activity activity, PluginCall call) {
+        PendingScan scan = pendingScan;
+        if (scan == null) {
+            call.reject("Document scanner is not ready.");
+            return;
+        }
+
+        int effectivePageLimit = scan.reviewCapturedDocument ? 1 : scan.requestedPageLimit;
+        GmsDocumentScannerOptions options = new GmsDocumentScannerOptions.Builder()
+            .setGalleryImportAllowed(false)
+            .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+            .setPageLimit(effectivePageLimit)
+            .setScannerMode(scan.scannerMode)
+            .build();
+
+        GmsDocumentScanner scanner = GmsDocumentScanning.getClient(options);
         scanner
             .getStartScanIntent(activity)
             .addOnSuccessListener((intentSender) -> {
@@ -172,36 +258,205 @@ public class DocumentScannerPlugin extends Plugin {
             });
     }
 
-    private void handleScanResult(ActivityResult result) {
-        PluginCall call = getPendingCall();
-        if (call == null) {
+    private void handleScanCanceled(PluginCall call) {
+        PendingScan scan = pendingScan;
+        if (scan != null && scan.reviewCapturedDocument && !scan.acceptedPageFiles.isEmpty()) {
+            resolveAcceptedPages(call);
             return;
         }
 
-        if (result.getResultCode() != Activity.RESULT_OK) {
-            JSObject response = new JSObject();
-            response.put("status", "cancel");
-            call.resolve(response);
+        JSObject response = new JSObject();
+        response.put("status", "cancel");
+        call.resolve(response);
+        releasePendingCall(call);
+    }
+
+    private void handleReviewedCaptureResult(PluginCall call, GmsDocumentScanningResult scanningResult) throws IOException {
+        PendingScan scan = pendingScan;
+        if (scan == null) {
+            throw new IOException("No active scan.");
+        }
+
+        List<Page> pages = scanningResult.getPages();
+        if (pages == null || pages.isEmpty()) {
+            throw new IOException("Document scanner returned no scanned pages.");
+        }
+
+        File pageFile = cacheAcceptedPage(pages.get(0), scan.acceptedPageFiles.size());
+        scan.acceptedPageFiles.add(pageFile);
+        showAcceptedPageDialog(call, scan, pageFile);
+    }
+
+    private File cacheAcceptedPage(Page page, int pageIndex) throws IOException {
+        Uri imageUri = page.getImageUri();
+        if (imageUri == null) {
+            throw new IOException("Missing image URI for scanned page.");
+        }
+
+        byte[] imageBytes = readBytesFromUri(imageUri);
+        Context context = getContext();
+        if (context == null) {
+            throw new IOException("Context unavailable for writing image.");
+        }
+
+        File directory = new File(context.getCacheDir(), "document_scanner_review");
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Unable to create review cache directory.");
+        }
+
+        String fileName = String.format(Locale.US, "REVIEW_SCAN_%d_%d.jpg", pageIndex, System.currentTimeMillis());
+        File outputFile = new File(directory, fileName);
+        try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
+            outputStream.write(imageBytes);
+        }
+        return outputFile;
+    }
+
+    private void showAcceptedPageDialog(PluginCall call, PendingScan scan, File pageFile) {
+        Activity activity = getActivity();
+        if (activity == null) {
+            call.reject("Activity reference is unavailable.");
             releasePendingCall(call);
             return;
         }
 
-        Intent data = result.getData();
-        if (data == null) {
-            call.reject("Document scanner returned no data.");
+        activity.runOnUiThread(() -> {
+            Bitmap previewBitmap = decodePreviewBitmap(pageFile, 1800);
+            AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+            builder.setTitle(buildReviewDialogTitle(scan));
+            builder.setMessage(buildReviewDialogMessage(scan));
+            builder.setView(buildReviewDialogView(activity, previewBitmap, scan));
+            builder.setCancelable(false);
+
+            boolean canContinue = scan.acceptedPageFiles.size() < scan.requestedPageLimit;
+
+            if (canContinue) {
+                builder.setPositiveButton("Continue", (dialog, which) -> relaunchScanner(call));
+                builder.setNeutralButton("Done", (dialog, which) -> resolveAcceptedPages(call));
+            } else {
+                builder.setPositiveButton("Done", (dialog, which) -> resolveAcceptedPages(call));
+            }
+
+            builder.setNegativeButton("Retake", (dialog, which) -> {
+                removeLastAcceptedPage(scan);
+                relaunchScanner(call);
+            });
+
+            AlertDialog dialog = builder.create();
+            dialog.setOnDismissListener((dismissedDialog) -> {
+                if (previewBitmap != null && !previewBitmap.isRecycled()) {
+                    previewBitmap.recycle();
+                }
+            });
+            dialog.show();
+        });
+    }
+
+    private String buildReviewDialogTitle(PendingScan scan) {
+        if (scan.requestedPageLimit > 1) {
+            return String.format(Locale.US, "Page %d of %d", scan.acceptedPageFiles.size(), scan.requestedPageLimit);
+        }
+        return "Review scanned page";
+    }
+
+    private String buildReviewDialogMessage(PendingScan scan) {
+        if (scan.acceptedPageFiles.size() >= scan.requestedPageLimit) {
+            return "The scan limit has been reached. Review the current page and finish when ready.";
+        }
+        return "Review the current page, then continue scanning or finish the flow.";
+    }
+
+    private View buildReviewDialogView(Context context, Bitmap previewBitmap, PendingScan scan) {
+        LinearLayout container = new LinearLayout(context);
+        container.setOrientation(LinearLayout.VERTICAL);
+        int padding = dpToPx(context, 12);
+        container.setPadding(0, padding, 0, 0);
+
+        ImageView imageView = new ImageView(context);
+        imageView.setAdjustViewBounds(true);
+        imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        imageView.setImageBitmap(previewBitmap);
+        container.addView(
+            imageView,
+            new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        );
+
+        TextView subtitle = new TextView(context);
+        subtitle.setTextColor(0xFF444444);
+        subtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        subtitle.setPadding(0, padding, 0, 0);
+        subtitle.setText(
+            scan.acceptedPageFiles.size() >= scan.requestedPageLimit
+                ? "Use Done to keep this page, or Retake to scan it again."
+                : "Use Continue to scan another page, Done to finish, or Retake to replace this page."
+        );
+        container.addView(
+            subtitle,
+            new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        );
+
+        return container;
+    }
+
+    private Bitmap decodePreviewBitmap(File imageFile, int maxDimension) {
+        BitmapFactory.Options boundsOptions = new BitmapFactory.Options();
+        boundsOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(imageFile.getAbsolutePath(), boundsOptions);
+
+        BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
+        decodeOptions.inSampleSize = calculateInSampleSize(boundsOptions, maxDimension, maxDimension);
+        return BitmapFactory.decodeFile(imageFile.getAbsolutePath(), decodeOptions);
+    }
+
+    private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        int height = options.outHeight;
+        int width = options.outWidth;
+        int inSampleSize = 1;
+
+        while ((height / inSampleSize) > reqHeight || (width / inSampleSize) > reqWidth) {
+            inSampleSize *= 2;
+        }
+
+        return Math.max(1, inSampleSize);
+    }
+
+    private int dpToPx(Context context, int dp) {
+        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.getResources().getDisplayMetrics()));
+    }
+
+    private void removeLastAcceptedPage(PendingScan scan) {
+        if (scan.acceptedPageFiles.isEmpty()) {
+            return;
+        }
+
+        File file = scan.acceptedPageFiles.remove(scan.acceptedPageFiles.size() - 1);
+        if (file.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            file.delete();
+        }
+    }
+
+    private void relaunchScanner(PluginCall call) {
+        Activity activity = getActivity();
+        if (activity == null) {
+            call.reject("Activity reference is unavailable.");
             releasePendingCall(call);
             return;
         }
 
-        GmsDocumentScanningResult scanningResult = GmsDocumentScanningResult.fromActivityResultIntent(data);
-        if (scanningResult == null) {
-            call.reject("Unable to parse document scan result.");
+        startScanner(activity, call);
+    }
+
+    private void resolveAcceptedPages(PluginCall call) {
+        PendingScan scan = pendingScan;
+        if (scan == null) {
+            call.reject("No active scan.");
             releasePendingCall(call);
             return;
         }
 
         try {
-            List<String> scannedImages = processScanResult(scanningResult);
+            List<String> scannedImages = processAcceptedPages(scan);
             JSObject response = new JSObject();
             response.put("status", "success");
             response.put("scannedImages", new JSArray(scannedImages));
@@ -209,6 +464,7 @@ public class DocumentScannerPlugin extends Plugin {
         } catch (IOException ioException) {
             call.reject("Failed to process scanned images: " + ioException.getLocalizedMessage(), ioException);
         } finally {
+            cleanupAcceptedPageFiles(scan);
             releasePendingCall(call);
         }
     }
@@ -222,6 +478,17 @@ public class DocumentScannerPlugin extends Plugin {
 
         for (int index = 0; index < pages.size(); index++) {
             String processed = handlePage(pages.get(index), index);
+            if (processed != null) {
+                results.add(processed);
+            }
+        }
+        return results;
+    }
+
+    private List<String> processAcceptedPages(PendingScan scan) throws IOException {
+        List<String> results = new ArrayList<>();
+        for (int index = 0; index < scan.acceptedPageFiles.size(); index++) {
+            String processed = handleAcceptedPage(scan.acceptedPageFiles.get(index), index, scan);
             if (processed != null) {
                 results.add(processed);
             }
@@ -255,6 +522,26 @@ public class DocumentScannerPlugin extends Plugin {
         return writeImageFile(imageBytes, pageIndex);
     }
 
+    private String handleAcceptedPage(File imageFile, int pageIndex, PendingScan scan) throws IOException {
+        byte[] imageBytes = readBytesFromFile(imageFile);
+        boolean needsAdjustment = scan.brightness != 0f || scan.contrast != 1f;
+        boolean needsProcessing = needsAdjustment || scan.quality < 100;
+
+        if (needsProcessing) {
+            imageBytes = processImage(imageBytes, scan.quality, scan.brightness, scan.contrast);
+        }
+
+        if (RESPONSE_TYPE_BASE64.equals(scan.responseType)) {
+            return Base64.encodeToString(imageBytes, Base64.NO_WRAP);
+        }
+
+        if (!needsProcessing) {
+            return imageFile.getAbsolutePath();
+        }
+
+        return writeImageFile(imageBytes, pageIndex);
+    }
+
     private byte[] readBytesFromUri(Uri uri) throws IOException {
         Context context = getContext();
         if (context == null) {
@@ -265,6 +552,18 @@ public class DocumentScannerPlugin extends Plugin {
             if (inputStream == null) {
                 throw new IOException("Unable to open image stream.");
             }
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] data = new byte[8192];
+            int nRead;
+            while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, nRead);
+            }
+            return buffer.toByteArray();
+        }
+    }
+
+    private byte[] readBytesFromFile(File file) throws IOException {
+        try (InputStream inputStream = new java.io.FileInputStream(file)) {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             byte[] data = new byte[8192];
             int nRead;
@@ -356,6 +655,22 @@ public class DocumentScannerPlugin extends Plugin {
             bridge.releaseCall(call);
             pendingScan = null;
         }
+    }
+
+    private void cleanupAcceptedPageFiles(PendingScan scan) {
+        boolean keepTempFiles =
+            RESPONSE_TYPE_FILE_PATH.equals(scan.responseType) && scan.quality >= 100 && scan.brightness == 0f && scan.contrast == 1f;
+        if (keepTempFiles) {
+            return;
+        }
+
+        for (File file : scan.acceptedPageFiles) {
+            if (file.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                file.delete();
+            }
+        }
+        scan.acceptedPageFiles.clear();
     }
 
     private int clamp(Integer value, int min, int max) {

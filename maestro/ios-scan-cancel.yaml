@@ -1,0 +1,19 @@
+appId: app.capgo.document.scanner
+---
+- launchApp:
+    clearState: true
+    permissions:
+      camera: allow
+    arguments:
+      isMaestro: "true"
+- assertVisible: "Document Scanner Demo"
+- scrollUntilVisible:
+    element: "Start Scanning"
+- tapOn: "Start Scanning"
+- assertVisible:
+    id: "simulator-scanner-title"
+- tapOn:
+    id: "simulator-scanner-cancel-button"
+- scrollUntilVisible:
+    element: "Scan cancelled"
+- assertVisible: "Scan cancelled"

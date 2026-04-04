@@ -42,7 +42,9 @@ public class DocumentScannerPlugin: CAPPlugin, CAPBridgedPlugin {
             croppedImageQuality: clampQuality(call.getInt("croppedImageQuality")),
             brightness: clampBrightness(call.getFloat("brightness")),
             contrast: clampContrast(call.getFloat("contrast")),
-            maxNumDocuments: validateMaxNumDocuments(call.getInt("maxNumDocuments"))
+            maxNumDocuments: validateMaxNumDocuments(call.getInt("maxNumDocuments")),
+            letUserAdjustCrop: call.getBool("letUserAdjustCrop", true),
+            reviewCapturedDocument: call.getBool("reviewCapturedDocument", false)
         )
 
         documentScanner?.startScan()

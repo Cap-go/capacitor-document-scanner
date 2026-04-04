@@ -4,6 +4,7 @@ import type { DocumentScannerPlugin, ScanDocumentOptions, ScanDocumentResponse }
 
 export class DocumentScannerWeb extends WebPlugin implements DocumentScannerPlugin {
   async scanDocument(_options?: ScanDocumentOptions): Promise<ScanDocumentResponse> {
+    void _options;
     throw this.unimplemented('Document scanning is not supported on the web.');
   }
 
