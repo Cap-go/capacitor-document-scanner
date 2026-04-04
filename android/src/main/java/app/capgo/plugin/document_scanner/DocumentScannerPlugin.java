@@ -129,7 +129,7 @@ public class DocumentScannerPlugin extends Plugin {
 
         int quality = clamp(call.getInt("croppedImageQuality", 100), 0, 100);
         String responseType = normalizeResponseType(call.getString("responseType"));
-        int pageLimit = clamp(call.getInt("maxNumDocuments", 24), 1, 24);
+        int pageLimit = clamp(call.getInt("maxNumDocuments", 20), 1, 24);
         float brightness = clampFloat(call.getFloat("brightness", 0f), -255f, 255f);
         float contrast = clampFloat(call.getFloat("contrast", 1f), 0f, 10f);
         String scannerMode = normalizeScannerMode(call.getString("scannerMode"));
