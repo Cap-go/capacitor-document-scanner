@@ -1010,10 +1010,9 @@ extension DocScanner: VNDocumentCameraViewControllerDelegate {
         _ controller: VNDocumentCameraViewController,
         didFinishWith scan: VNDocumentCameraScan
     ) {
-        let images = (0 ..< scan.pageCount).map(scan.imageOfPage(at:))
         DocScanner.resetVisionKitHackState()
         dismiss(controller) {
-            self.finishScan(with: images)
+            self.finishScan(with: scan)
         }
     }
 
