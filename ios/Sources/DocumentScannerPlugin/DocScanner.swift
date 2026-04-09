@@ -846,34 +846,22 @@ class DocScanner: NSObject {
         return className.contains("alert") || className.contains("sheet") || className.contains("prompt")
     }
 
+    private func finishScan(with scan: VNDocumentCameraScan) {
+        processImages(pageCount: limitedPageCount(total: scan.pageCount)) { index in
+            scan.imageOfPage(at: index)
+        }
+    }
+
     private func finishScan(with images: [UIImage]) {
+        processImages(pageCount: limitedPageCount(total: images.count)) { index in
+            images[index]
+        }
+    }
+
+    private func processImages(pageCount: Int, imageProvider: @escaping (Int) -> UIImage) {
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                let limitedImages = self.limit(images: images)
-                let results = try limitedImages.enumerated().map { index, image in
-                    let adjustedImage = self.applyBrightnessContrastIfNeeded(to: image)
-                    guard
-                        let imageData = adjustedImage.jpegData(
-                            compressionQuality: CGFloat(self.croppedImageQuality) / 100.0
-                        )
-                    else {
-                        throw RuntimeError.message("Unable to get scanned document in jpeg format.")
-                    }
-
-                    switch self.responseType {
-                    case ResponseType.base64:
-                        return imageData.base64EncodedString()
-                    case ResponseType.imageFilePath:
-                        let imagePath = FileUtil().createImageFile(index)
-                        try imageData.write(to: imagePath)
-                        return imagePath.absoluteString
-                    default:
-                        throw RuntimeError.message(
-                            "responseType must be \(ResponseType.base64) or \(ResponseType.imageFilePath)"
-                        )
-                    }
-                }
-
+                let results = try self.makeResults(pageCount: pageCount, imageProvider: imageProvider)
                 DispatchQueue.main.async {
                     self.successHandler(results)
                 }
@@ -889,11 +877,50 @@ class DocScanner: NSObject {
         }
     }
 
-    private func limit(images: [UIImage]) -> [UIImage] {
-        guard let maxNumDocuments else {
-            return images
+    private func makeResults(pageCount: Int, imageProvider: @escaping (Int) -> UIImage) throws -> [String] {
+        var results: [String] = []
+        results.reserveCapacity(pageCount)
+
+        for index in 0 ..< pageCount {
+            let result = try autoreleasepool {
+                try self.process(image: imageProvider(index), at: index)
+            }
+            results.append(result)
         }
-        return Array(images.prefix(maxNumDocuments))
+
+        return results
+    }
+
+    private func process(image: UIImage, at index: Int) throws -> String {
+        let adjustedImage = applyBrightnessContrastIfNeeded(to: image)
+        guard
+            let imageData = adjustedImage.jpegData(
+                compressionQuality: CGFloat(croppedImageQuality) / 100.0
+            )
+        else {
+            throw RuntimeError.message("Unable to get scanned document in jpeg format.")
+        }
+
+        switch responseType {
+        case ResponseType.base64:
+            return imageData.base64EncodedString()
+        case ResponseType.imageFilePath:
+            let imagePath = FileUtil().createImageFile(index)
+            try imageData.write(to: imagePath)
+            return imagePath.absoluteString
+        default:
+            throw RuntimeError.message(
+                "responseType must be \(ResponseType.base64) or \(ResponseType.imageFilePath)"
+            )
+        }
+    }
+
+    private func limitedPageCount(total: Int) -> Int {
+        guard let maxNumDocuments else {
+            return total
+        }
+
+        return max(0, min(total, maxNumDocuments))
     }
 
     private func applyBrightnessContrastIfNeeded(to image: UIImage) -> UIImage {
