@@ -1,3 +1,4 @@
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import {
   DocumentScanner,
   ResponseType,
@@ -198,3 +199,9 @@ if (scanButton) {
 
 // Set initial status
 setStatus('Ready to scan', 'idle');
+
+if (Capacitor.isNativePlatform()) {
+  CapacitorUpdater.notifyAppReady().catch((error) => {
+    console.error('Capgo notifyAppReady failed', error);
+  });
+}
