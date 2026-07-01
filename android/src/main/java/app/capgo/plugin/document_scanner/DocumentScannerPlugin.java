@@ -331,13 +331,13 @@ public class DocumentScannerPlugin extends Plugin {
             boolean canContinue = scan.acceptedPageFiles.size() < scan.requestedPageLimit;
 
             if (canContinue) {
-                builder.setPositiveButton("Continue", (dialog, which) -> relaunchScanner(call));
-                builder.setNeutralButton("Done", (dialog, which) -> resolveAcceptedPages(call));
+                builder.setPositiveButton("Add another", (dialog, which) -> relaunchScanner(call));
+                builder.setNeutralButton("Finish", (dialog, which) -> resolveAcceptedPages(call));
             } else {
-                builder.setPositiveButton("Done", (dialog, which) -> resolveAcceptedPages(call));
+                builder.setPositiveButton("Finish", (dialog, which) -> resolveAcceptedPages(call));
             }
 
-            builder.setNegativeButton("Retake", (dialog, which) -> {
+            builder.setNegativeButton("Try again", (dialog, which) -> {
                 removeLastAcceptedPage(scan);
                 relaunchScanner(call);
             });
@@ -387,8 +387,8 @@ public class DocumentScannerPlugin extends Plugin {
         subtitle.setPadding(0, padding, 0, 0);
         subtitle.setText(
             scan.acceptedPageFiles.size() >= scan.requestedPageLimit
-                ? "Use Done to keep this page, or Retake to scan it again."
-                : "Use Continue to scan another page, Done to finish, or Retake to replace this page."
+                ? "Use Finish to keep this page, or Try again to scan it again."
+                : "Use Add another to scan the next page, Finish to save, or Try again to replace this page."
         );
         container.addView(
             subtitle,
