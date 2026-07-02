@@ -17,6 +17,7 @@ const qualityInput = document.getElementById('croppedImageQuality');
 const maxDocsInput = document.getElementById('maxNumDocuments');
 const scannerModeSelect = document.getElementById('scannerMode');
 const letUserAdjustCropInput = document.getElementById('letUserAdjustCrop');
+const reviewCapturedDocumentInput = document.getElementById('reviewCapturedDocument');
 const brightnessInput = document.getElementById('brightness');
 const contrastInput = document.getElementById('contrast');
 
@@ -83,6 +84,10 @@ const buildOptions = () => {
 
   if (typeof letUserAdjustCropInput?.checked === 'boolean') {
     options.letUserAdjustCrop = letUserAdjustCropInput.checked;
+  }
+
+  if (typeof reviewCapturedDocumentInput?.checked === 'boolean') {
+    options.reviewCapturedDocument = reviewCapturedDocumentInput.checked;
   }
 
   const brightness = Number(brightnessInput?.value);
