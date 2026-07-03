@@ -4,7 +4,7 @@ import pkg from './package.json';
 
 const config: CapacitorConfig = {
   appId: 'app.capgo.document.scanner',
-  appName: 'Document Scanner Example',
+  appName: '@capgo/capacitor-document-scanner',
   webDir: 'dist',
   plugins: {
     SplashScreen: {
