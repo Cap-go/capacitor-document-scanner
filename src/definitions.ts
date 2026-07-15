@@ -16,7 +16,8 @@ export interface ScanDocumentOptions {
    * Allow the user to adjust the detected crop before saving.
    * On iOS this forces the native VisionKit preview/editor after each capture using
    * the private VisionKit navigation hooks needed to keep the scanner flow alive.
-   * On Android this enables ML Kit's crop adjustment flow.
+   * On Android, crop/rotate is always part of the ML Kit UI in every ScannerMode;
+   * use `scannerMode` to control filters and ML cleaning instead.
    * @default true
    */
   letUserAdjustCrop?: boolean;
@@ -65,6 +66,7 @@ export interface ScanDocumentOptions {
 
   /**
    * Android only: scanner mode that controls ML Kit features and filters.
+   * Independent of `letUserAdjustCrop` (crop/rotate is available in all modes).
    * - 'base': Basic scan with crop/rotate, no filters or ML cleaning
    * - 'base_with_filter': Adds grayscale and auto-enhancement filters
    * - 'full': All features including ML-based image cleaning (erases stains, fingers, etc.)

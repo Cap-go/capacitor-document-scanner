@@ -156,13 +156,9 @@ public class DocumentScannerPlugin extends Plugin {
         float contrast = clampFloat(call.getFloat("contrast", 1f), 0f, 10f);
         String scannerMode = normalizeScannerMode(call.getString("scannerMode"));
         boolean reviewCapturedDocument = call.getBoolean("reviewCapturedDocument", false);
-        // Only default letUserAdjustCrop to true if scannerMode is FULL
-        // This ensures scannerMode takes precedence when explicitly set
-        boolean defaultAllowCrop = SCANNER_MODE_FULL.equals(scannerMode);
-        boolean allowAdjustCrop = call.getBoolean("letUserAdjustCrop", defaultAllowCrop);
-
-        // Determine scanner mode based on scannerMode parameter and letUserAdjustCrop
-        int mlKitScannerMode = determineScannerMode(scannerMode, allowAdjustCrop);
+        // Crop/rotate is available in all ML Kit scanner modes (including BASE).
+        // Respect scannerMode as-is; do not upgrade to FULL for letUserAdjustCrop.
+        int mlKitScannerMode = determineScannerMode(scannerMode);
 
         bridge.saveCall(call);
         pendingScan = new PendingScan(
@@ -712,20 +708,12 @@ public class DocumentScannerPlugin extends Plugin {
     }
 
     /**
-     * Determines the ML Kit scanner mode based on scannerMode and letUserAdjustCrop settings.
-     * Note: letUserAdjustCrop requires SCANNER_MODE_FULL, so it takes precedence over scannerMode.
+     * Maps the requested scannerMode string to the ML Kit scanner mode constant.
+     * Crop and rotate are available in every mode; mode only controls filters / ML cleaning.
      * @param scannerMode The requested scanner mode (base, base_with_filter, full)
-     * @param allowAdjustCrop Whether to allow manual crop adjustment
      * @return The ML Kit scanner mode constant
      */
-    private int determineScannerMode(String scannerMode, boolean allowAdjustCrop) {
-        // If letUserAdjustCrop is true, we must use SCANNER_MODE_FULL
-        // because only FULL mode supports manual crop adjustment
-        if (allowAdjustCrop) {
-            return GmsDocumentScannerOptions.SCANNER_MODE_FULL;
-        }
-
-        // Otherwise, use the requested scanner mode
+    private int determineScannerMode(String scannerMode) {
         switch (scannerMode) {
             case SCANNER_MODE_BASE:
                 return GmsDocumentScannerOptions.SCANNER_MODE_BASE;
