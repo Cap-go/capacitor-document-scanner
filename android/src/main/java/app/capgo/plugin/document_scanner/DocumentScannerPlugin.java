@@ -65,7 +65,7 @@ public class DocumentScannerPlugin extends Plugin {
 
     private static class PendingScan {
 
-        private final String callId;
+        private final PluginCall call;
         private final String responseType;
         private final int quality;
         private final float brightness;
@@ -76,7 +76,7 @@ public class DocumentScannerPlugin extends Plugin {
         private final List<File> acceptedPageFiles = new ArrayList<>();
 
         PendingScan(
-            String callId,
+            PluginCall call,
             String responseType,
             int quality,
             float brightness,
@@ -85,7 +85,7 @@ public class DocumentScannerPlugin extends Plugin {
             int scannerMode,
             boolean reviewCapturedDocument
         ) {
-            this.callId = callId;
+            this.call = call;
             this.responseType = responseType;
             this.quality = quality;
             this.brightness = brightness;
@@ -160,9 +160,9 @@ public class DocumentScannerPlugin extends Plugin {
         // Respect scannerMode as-is; do not upgrade to FULL for letUserAdjustCrop.
         int mlKitScannerMode = determineScannerMode(scannerMode);
 
-        bridge.saveCall(call);
+        call.setKeepAlive(true);
         pendingScan = new PendingScan(
-            call.getCallbackId(),
+            call,
             responseType,
             quality,
             brightness,
@@ -247,7 +247,7 @@ public class DocumentScannerPlugin extends Plugin {
                     savedCall.reject("Unable to start document scanner: " + e.getLocalizedMessage(), e);
                     releasePendingCall(savedCall);
                 } else {
-                    bridge.releaseCall(call);
+                    call.release(bridge);
                     pendingScan = null;
                     call.reject("Unable to start document scanner: " + e.getLocalizedMessage(), e);
                 }
@@ -643,12 +643,12 @@ public class DocumentScannerPlugin extends Plugin {
         if (pendingScan == null) {
             return null;
         }
-        return bridge.getSavedCall(pendingScan.callId);
+        return pendingScan.call;
     }
 
     private void releasePendingCall(PluginCall call) {
         if (pendingScan != null) {
-            bridge.releaseCall(call);
+            call.release(bridge);
             pendingScan = null;
         }
     }
