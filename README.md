@@ -1,5 +1,7 @@
 # @capgo/capacitor-document-scanner
 
+Scan paper documents with the native scanner UI: VisionKit on iOS and Google ML Kit on Android find the page edges, fix the perspective and return clean images. Add receipt, ID or contract capture to your app without building a camera screen.
+
 <a href="https://capgo.app/?ref=plugin_document_scanner"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-document-scanner" alt="Capgo - Instant updates for Capacitor" /></a>
 
 <div align="center">
@@ -9,10 +11,8 @@
   <p><a href="https://capgo.app/consulting/?ref=plugin_document_scanner">Missing a feature? We'll build the plugin for you 💪</a></p>
 </div>
 
-Scan paper documents with the native scanner UI: VisionKit on iOS and Google ML Kit on Android find the page edges, fix the perspective and return clean images. Add receipt, ID or contract capture to your app without building a camera screen.
-
 <p align="center">
-  <img src="./.github/assets/readme-demo.webp" alt="Example app on iOS scanning a handwritten page: the scanner finds the page edges and the scanned image appears in the app" width="300" />
+  <img src="https://raw.githubusercontent.com/Cap-go/capacitor-document-scanner/main/.github/assets/readme-demo.webp" alt="Example app on iOS scanning a handwritten page: the scanner finds the page edges and the scanned image appears in the app" width="300" />
 </p>
 
 ## Key features
