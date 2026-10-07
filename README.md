@@ -1,11 +1,28 @@
 # @capgo/capacitor-document-scanner
-<a href="https://capgo.app/"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-document-scanner" alt="Capgo - Instant updates for Capacitor" /></a>
+
+Scan paper documents with the native scanner UI: VisionKit on iOS and Google ML Kit on Android find the page edges, fix the perspective and return clean images. Add receipt, ID or contract capture to your app without building a camera screen.
+
+<a href="https://capgo.app/?ref=plugin_document_scanner"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-document-scanner" alt="Capgo - Instant updates for Capacitor" /></a>
 
 <div align="center">
-  <h2><a href="https://capgo.app/?ref=plugin_document_scanner"> ➡️ Get Instant updates for your App with Capgo</a></h2>
-  <h2><a href="https://capgo.app/consulting/?ref=plugin_document_scanner"> Missing a feature? We’ll build the plugin for you 💪</a></h2>
+  <p><b>Capgo</b>: open-source live updates for Ionic and Capacitor apps. Ship OTA fixes and features instantly, without waiting for app store review.</p>
+  <h2><a href="https://capgo.app/register/?ref=plugin_document_scanner">➡️ Get started for free</a></h2>
+  <p>14-day unlimited free trial. No credit card required</p>
+  <p><a href="https://capgo.app/consulting/?ref=plugin_document_scanner">Missing a feature? We'll build the plugin for you 💪</a></p>
 </div>
-Capacitor plugin to scan document iOS and Android
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Cap-go/capacitor-document-scanner/main/.github/assets/readme-demo.webp" alt="Example app on iOS scanning a handwritten page: the scanner finds the page edges and the scanned image appears in the app" width="300" />
+</p>
+
+## Key features
+
+- **Native scanner UI**: `scanDocument()` opens the VisionKit document camera on iOS and the ML Kit document scanner on Android, with automatic edge detection and perspective correction.
+- **Multi-page scans**: capture up to 24 pages in one session, or pass `maxNumDocuments: 1` for single-page mode.
+- **Crop and review**: `letUserAdjustCrop` lets users fix the detected crop, and `reviewCapturedDocument` shows each page before the next capture.
+- **Image cleanup**: tune `brightness` and `contrast` on both platforms. On Android, `scannerMode` adds filters and ML cleaning that removes stains and fingers.
+- **Flexible output**: get file paths or base64 strings with `responseType`, plus a `success` or `cancel` status.
+- **Platforms**: iOS and Android. Web is not supported: `scanDocument()` rejects as unimplemented.
 
 ## Documentation
 
