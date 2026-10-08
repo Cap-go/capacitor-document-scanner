@@ -409,7 +409,7 @@ public class DocumentScannerPlugin extends Plugin {
         int width = options.outWidth;
         int inSampleSize = 1;
 
-        while ((height / inSampleSize) > reqHeight || (width / inSampleSize) > reqWidth) {
+        while (height / inSampleSize > reqHeight || width / inSampleSize > reqWidth) {
             inSampleSize *= 2;
         }
 
@@ -603,9 +603,28 @@ public class DocumentScannerPlugin extends Plugin {
      */
     private Bitmap applyBrightnessContrast(Bitmap bitmap, float brightness, float contrast) {
         // Create ColorMatrix for brightness and contrast
-        ColorMatrix colorMatrix = new ColorMatrix(
-            new float[] { contrast, 0, 0, 0, brightness, 0, contrast, 0, 0, brightness, 0, 0, contrast, 0, brightness, 0, 0, 0, 1, 0 }
-        );
+        ColorMatrix colorMatrix = new ColorMatrix(new float[] {
+            contrast,
+            0,
+            0,
+            0,
+            brightness,
+            0,
+            contrast,
+            0,
+            0,
+            brightness,
+            0,
+            0,
+            contrast,
+            0,
+            brightness,
+            0,
+            0,
+            0,
+            1,
+            0
+        });
 
         // Create a new bitmap with the same dimensions
         Bitmap adjustedBitmap = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig());
