@@ -15,6 +15,7 @@ test('allows static VisionKit private constants', () => {
 test('flags runtime-built lookup arguments', () => {
   const source = `
     NSClassFromString(prefix + suffix)
+    NSClassFromString("Prefix\\(suffix)")
     gestureRecognizer.value(forKey: makeKey())
     class_getInstanceVariable(targetClass, makeIvarName())
     NSSelectorFromString("foo")
@@ -22,7 +23,9 @@ test('flags runtime-built lookup arguments', () => {
 
   const violations = analyzeSwiftSource(source);
   assert.ok(violations.some((item) => item.kind === 'NSSelectorFromString'));
-  assert.ok(violations.some((item) => item.kind === 'NSClassFromString runtime argument'));
+  assert.ok(
+    violations.filter((item) => item.kind === 'NSClassFromString runtime argument').length >= 2
+  );
   assert.ok(violations.some((item) => item.kind === 'value(forKey:) runtime argument'));
   assert.ok(violations.some((item) => item.kind === 'class_getInstanceVariable runtime argument'));
 });

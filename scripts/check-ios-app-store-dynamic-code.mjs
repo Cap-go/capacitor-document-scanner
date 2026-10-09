@@ -17,8 +17,8 @@ function isStaticLookupArgument(expression) {
     return false;
   }
 
-  if (/^"[^"]*"$/.test(trimmed)) {
-    return true;
+  if (/^"(?:[^"\\]|\\.)*"$/.test(trimmed)) {
+    return !trimmed.includes('\\(');
   }
 
   if (!trimmed.startsWith('VisionKitPrivateConstants.')) {
