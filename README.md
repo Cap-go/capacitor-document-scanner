@@ -19,7 +19,7 @@ Scan paper documents with the native scanner UI: VisionKit on iOS and Google ML 
 
 - **Native scanner UI**: `scanDocument()` opens the VisionKit document camera on iOS and the ML Kit document scanner on Android, with automatic edge detection and perspective correction.
 - **Multi-page scans**: capture up to 24 pages in one session, or pass `maxNumDocuments: 1` for single-page mode.
-- **Crop and review**: `letUserAdjustCrop` and `reviewCapturedDocument` drive the iOS managed scan flow (public Vision + UIKit screens) or ML Kit on Android.
+- **Crop and review**: `letUserAdjustCrop` lets users fix the detected crop, and `reviewCapturedDocument` shows each page before the next capture.
 - **Image cleanup**: tune `brightness` and `contrast` on both platforms. On Android, `scannerMode` adds filters and ML cleaning that removes stains and fingers.
 - **Flexible output**: get file paths or base64 strings with `responseType`, plus a `success` or `cancel` status.
 - **Platforms**: iOS and Android. Web is not supported: `scanDocument()` rejects as unimplemented.
