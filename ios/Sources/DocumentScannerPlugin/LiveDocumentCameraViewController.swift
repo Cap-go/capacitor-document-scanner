@@ -87,12 +87,14 @@ final class LiveDocumentCameraViewController: UIViewController {
     }
 
     @objc private func captureTapped() {
-        guard !isCapturing else {
-            return
+        sessionQueue.async {
+            guard !self.isCapturing else {
+                return
+            }
+            self.isCapturing = true
+            let settings = AVCapturePhotoSettings()
+            self.photoOutput.capturePhoto(with: settings, delegate: self)
         }
-        isCapturing = true
-        let settings = AVCapturePhotoSettings()
-        photoOutput.capturePhoto(with: settings, delegate: self)
     }
 
     private func requestCameraAccessAndStart() {
@@ -177,7 +179,12 @@ final class LiveDocumentCameraViewController: UIViewController {
 
 extension LiveDocumentCameraViewController: AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        isCapturing = false
+        defer {
+            sessionQueue.async {
+                self.isCapturing = false
+            }
+        }
+
         if let error {
             DispatchQueue.main.async {
                 self.delegate?.liveDocumentCamera(self, didFail: error.localizedDescription)
@@ -192,12 +199,14 @@ extension LiveDocumentCameraViewController: AVCapturePhotoCaptureDelegate {
             return
         }
 
-        let detected = DocumentQuadDetector.detect(in: image)
-            ?? latestDetectedQuad
-            ?? DocumentQuad.defaultInset(for: image.size)
+        let uprightImage = image.normalizedUpOrientation()
+        let detectedQuad = self.latestDetectedQuad
+        let detected = DocumentQuadDetector.detect(in: uprightImage)
+            ?? detectedQuad
+            ?? DocumentQuad.defaultInset(for: uprightImage.size)
 
         DispatchQueue.main.async {
-            self.delegate?.liveDocumentCamera(self, didCapture: image, detectedQuad: detected)
+            self.delegate?.liveDocumentCamera(self, didCapture: uprightImage, detectedQuad: detected)
         }
     }
 }

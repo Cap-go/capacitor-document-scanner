@@ -5,6 +5,11 @@ final class DocumentCropOverlayView: UIView {
         didSet { setNeedsDisplay() }
     }
 
+    /// Region where the image is drawn (aspect fit inside the overlay bounds).
+    var interactionRect: CGRect = .zero {
+        didSet { setNeedsDisplay() }
+    }
+
     var onQuadChanged: ((DocumentQuad) -> Void)?
 
     private var activeCorner: Int?
@@ -55,9 +60,10 @@ final class DocumentCropOverlayView: UIView {
             return
         }
         let location = touch.location(in: self)
+        let rect = activeInteractionRect()
         let normalized = CGPoint(
-            x: min(1, max(0, location.x / max(bounds.width, 1))),
-            y: min(1, max(0, location.y / max(bounds.height, 1)))
+            x: min(1, max(0, (location.x - rect.minX) / max(rect.width, 1))),
+            y: min(1, max(0, (location.y - rect.minY) / max(rect.height, 1)))
         )
         updateCorner(index: activeCorner, to: normalized)
         onQuadChanged?(quad)
@@ -68,14 +74,21 @@ final class DocumentCropOverlayView: UIView {
         activeCorner = nil
     }
 
+    private func activeInteractionRect() -> CGRect {
+        if interactionRect.width > 0 && interactionRect.height > 0 {
+            return interactionRect
+        }
+        return bounds
+    }
+
     private func cornerPointsInView() -> [CGPoint] {
-        let size = bounds.size
+        let rect = activeInteractionRect()
         let quad = quad.clamped()
         return [
-            CGPoint(x: quad.topLeft.x * size.width, y: quad.topLeft.y * size.height),
-            CGPoint(x: quad.topRight.x * size.width, y: quad.topRight.y * size.height),
-            CGPoint(x: quad.bottomRight.x * size.width, y: quad.bottomRight.y * size.height),
-            CGPoint(x: quad.bottomLeft.x * size.width, y: quad.bottomLeft.y * size.height)
+            CGPoint(x: rect.minX + quad.topLeft.x * rect.width, y: rect.minY + quad.topLeft.y * rect.height),
+            CGPoint(x: rect.minX + quad.topRight.x * rect.width, y: rect.minY + quad.topRight.y * rect.height),
+            CGPoint(x: rect.minX + quad.bottomRight.x * rect.width, y: rect.minY + quad.bottomRight.y * rect.height),
+            CGPoint(x: rect.minX + quad.bottomLeft.x * rect.width, y: rect.minY + quad.bottomLeft.y * rect.height)
         ]
     }
 

@@ -150,7 +150,11 @@ extension ManagedDocumentScanFlowViewController: LiveDocumentCameraViewControlle
 
 extension ManagedDocumentScanFlowViewController: DocumentCropEditorViewControllerDelegate {
     func documentCropEditorDidCancel(_ controller: DocumentCropEditorViewController) {
-        flowDelegate?.managedDocumentScanFlowDidCancel(self)
+        if acceptedImages.isEmpty {
+            flowDelegate?.managedDocumentScanFlowDidCancel(self)
+        } else {
+            flowDelegate?.managedDocumentScanFlow(self, didFinishWith: acceptedImages)
+        }
     }
 
     func documentCropEditorDidRetake(_ controller: DocumentCropEditorViewController) {

@@ -97,6 +97,11 @@ final class DocumentCropEditorViewController: UIViewController {
         ])
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        overlayView.interactionRect = imageView.aspectFitImageRect()
+    }
+
     private func configureActionButton(_ button: UIButton, title: String, background: UIColor, titleColor: UIColor) {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle(title, for: .normal)

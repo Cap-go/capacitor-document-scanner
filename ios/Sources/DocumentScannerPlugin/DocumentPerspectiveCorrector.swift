@@ -3,7 +3,8 @@ import UIKit
 
 enum DocumentPerspectiveCorrector {
     static func correctedImage(from image: UIImage, quad: DocumentQuad, context: CIContext = CIContext()) -> UIImage? {
-        guard let cgImage = image.cgImage else {
+        let uprightImage = image.normalizedUpOrientation()
+        guard let cgImage = uprightImage.cgImage else {
             return nil
         }
 
@@ -27,6 +28,6 @@ enum DocumentPerspectiveCorrector {
             return nil
         }
 
-        return UIImage(cgImage: outputCGImage, scale: image.scale, orientation: .up)
+        return UIImage(cgImage: outputCGImage, scale: uprightImage.scale, orientation: .up)
     }
 }
