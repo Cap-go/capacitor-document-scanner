@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const iosSourcesRoot = path.join(process.cwd(), 'ios', 'Sources');
 
@@ -10,24 +11,21 @@ const runtimeDynamicPatterns = [
   { name: 'dlsym', regex: /\bdlsym\s*\(/ },
 ];
 
-const staticConstantArgument =
-  /^(?:VisionKitPrivateConstants\.[A-Za-z0-9_]+|[A-Za-z_][A-Za-z0-9_]*)$/;
-
 function isStaticLookupArgument(expression) {
   const trimmed = expression.trim();
   if (!trimmed) {
     return false;
   }
 
-  if (staticConstantArgument.test(trimmed)) {
+  if (/^"[^"]*"$/.test(trimmed)) {
     return true;
   }
 
-  if (trimmed.startsWith('VisionKitPrivateConstants.')) {
-    return !/[+\(]/.test(trimmed);
+  if (!trimmed.startsWith('VisionKitPrivateConstants.')) {
+    return false;
   }
 
-  return false;
+  return /^VisionKitPrivateConstants\.[A-Za-z0-9_]+$/.test(trimmed);
 }
 
 function findViolationsInCall(contents, callName, argumentExtractor) {
@@ -201,6 +199,7 @@ function main() {
   console.log('iOS App Store dynamic code check passed.');
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const entryPath = process.argv[1];
+if (entryPath && import.meta.url === pathToFileURL(path.resolve(entryPath)).href) {
   main();
 }
