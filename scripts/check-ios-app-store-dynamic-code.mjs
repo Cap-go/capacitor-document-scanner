@@ -11,6 +11,10 @@ const runtimeDynamicPatterns = [
   { name: 'dlsym', regex: /\bdlsym\s*\(/ },
 ];
 
+function containsSwiftStringInterpolation(quotedLiteral) {
+  return /\\\([^)]*\)/.test(quotedLiteral);
+}
+
 function isStaticLookupArgument(expression) {
   const trimmed = expression.trim();
   if (!trimmed) {
@@ -18,7 +22,7 @@ function isStaticLookupArgument(expression) {
   }
 
   if (/^"(?:[^"\\]|\\.)*"$/.test(trimmed)) {
-    return !trimmed.includes('\\(');
+    return !containsSwiftStringInterpolation(trimmed);
   }
 
   if (!trimmed.startsWith('VisionKitPrivateConstants.')) {

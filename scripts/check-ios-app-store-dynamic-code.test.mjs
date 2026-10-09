@@ -12,6 +12,17 @@ test('allows static VisionKit private constants', () => {
   assert.equal(analyzeSwiftSource(source).length, 0);
 });
 
+test('rejects bare identifier lookup arguments', () => {
+  const source = `
+    NSClassFromString(dynamicClassName)
+    gestureRecognizer.value(forKey: targetsKey)
+  `;
+
+  const violations = analyzeSwiftSource(source);
+  assert.ok(violations.some((item) => item.kind === 'NSClassFromString runtime argument'));
+  assert.ok(violations.some((item) => item.kind === 'value(forKey:) runtime argument'));
+});
+
 test('flags runtime-built lookup arguments', () => {
   const source = `
     NSClassFromString(prefix + suffix)
