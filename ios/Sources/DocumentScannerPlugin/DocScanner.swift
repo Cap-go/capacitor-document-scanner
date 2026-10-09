@@ -141,6 +141,7 @@ class DocScanner: NSObject {
     private var brightness: Float
     private var contrast: Float
     private var maxNumDocuments: Int?
+    private var letUserAdjustCrop: Bool
     private var reviewCapturedDocument: Bool
     private let ciContext = CIContext()
 
@@ -166,8 +167,8 @@ class DocScanner: NSObject {
         self.brightness = brightness
         self.contrast = contrast
         self.maxNumDocuments = maxNumDocuments
+        self.letUserAdjustCrop = letUserAdjustCrop
         self.reviewCapturedDocument = reviewCapturedDocument
-        _ = letUserAdjustCrop
     }
 
     override convenience init() {
@@ -198,9 +199,25 @@ class DocScanner: NSObject {
         }
 
         DispatchQueue.main.async {
-            let documentCameraViewController = VNDocumentCameraViewController()
-            documentCameraViewController.delegate = self
-            viewController.present(documentCameraViewController, animated: true)
+            if DocumentScanSessionPolicy.usesVisionKitOnly(
+                letUserAdjustCrop: self.letUserAdjustCrop,
+                reviewCapturedDocument: self.reviewCapturedDocument,
+                maxNumDocuments: self.maxNumDocuments
+            ) {
+                let documentCameraViewController = VNDocumentCameraViewController()
+                documentCameraViewController.delegate = self
+                viewController.present(documentCameraViewController, animated: true)
+                return
+            }
+
+            let configuration = ManagedDocumentScanConfiguration(
+                letUserAdjustCrop: self.letUserAdjustCrop,
+                reviewCapturedDocument: self.reviewCapturedDocument,
+                maxNumDocuments: self.maxNumDocuments
+            )
+            let managedFlow = ManagedDocumentScanFlowViewController(configuration: configuration)
+            managedFlow.flowDelegate = self
+            viewController.present(managedFlow, animated: true)
         }
     }
 
@@ -226,13 +243,13 @@ class DocScanner: NSObject {
         self.brightness = brightness ?? 0.0
         self.contrast = contrast ?? 1.0
         self.maxNumDocuments = maxNumDocuments
+        self.letUserAdjustCrop = letUserAdjustCrop
         self.reviewCapturedDocument = reviewCapturedDocument
-        _ = letUserAdjustCrop
 
         startScan()
     }
 
-    /// Clamps the number of pages returned to the configured limit (used after the user finishes in VisionKit).
+    /// Clamps VisionKit batch results to a configured limit (managed flow enforces limits during capture).
     static func clampedPageCount(total: Int, limit: Int?) -> Int {
         guard let limit else {
             return total
@@ -422,6 +439,29 @@ extension DocScanner: VNDocumentCameraViewControllerDelegate {
     ) {
         dismiss(controller) {
             self.errorHandler(error.localizedDescription)
+        }
+    }
+}
+
+extension DocScanner: ManagedDocumentScanFlowViewControllerDelegate {
+    func managedDocumentScanFlowDidCancel(_ controller: ManagedDocumentScanFlowViewController) {
+        dismiss(controller) {
+            self.cancelHandler()
+        }
+    }
+
+    func managedDocumentScanFlow(
+        _ controller: ManagedDocumentScanFlowViewController,
+        didFinishWith images: [UIImage]
+    ) {
+        dismiss(controller) {
+            self.finishScan(with: images)
+        }
+    }
+
+    func managedDocumentScanFlow(_ controller: ManagedDocumentScanFlowViewController, didFail message: String) {
+        dismiss(controller) {
+            self.errorHandler(message)
         }
     }
 }

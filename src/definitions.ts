@@ -14,9 +14,9 @@ export interface ScanDocumentOptions {
 
   /**
    * Allow the user to adjust the detected crop before saving.
-   * On iOS, VisionKit already exposes crop and rotate in its standard document camera UI
-   * when the user opens a captured page. This flag is accepted for API parity but does not
-   * change the iOS scanner flow (App Store guideline 2.5.2).
+   * On iOS this opens the plugin crop editor after each capture (Vision rectangle detection,
+   * perspective correction, and a UIKit corner editor). When disabled and no other managed-flow
+   * options are set, iOS uses the stock VisionKit document camera.
    * On Android, crop/rotate is always part of the ML Kit UI in every ScannerMode;
    * use `scannerMode` to control filters and ML cleaning instead.
    * @default true
@@ -26,8 +26,7 @@ export interface ScanDocumentOptions {
   /**
    * When enabled, shows the current scanned page before continuing so the user can
    * review it and explicitly continue or finish the flow.
-   * On iOS, VisionKit controls when review and editing appear. This flag is accepted for
-   * API parity but does not force an extra review step between captures on iOS.
+   * On iOS this shows a review screen between captures (and when the scan limit is reached).
    * On Android this switches to a one-page-at-a-time flow between ML Kit sessions.
    * @default false
    */
@@ -35,9 +34,8 @@ export interface ScanDocumentOptions {
 
   /**
    * Maximum number of documents to scan.
-   * On iOS: VisionKit allows up to 24 pages per session (system limit). When you pass a
-   * smaller limit, only the first N pages are returned after the user taps Save; the
-   * scanner UI may still let the user capture more pages before finishing.
+   * On iOS: VisionKit caps scans at 24 pages (system limit). The managed scan flow stops adding
+   * pages when your limit is reached and presents the review or crop completion UI.
    * On Android: customizable limit; defaults to 20 for performance (clamped 1-24).
    * Set to 1 for single-scan mode where the scanner stops after one document.
    * @default 20 on Android, 24 on iOS
