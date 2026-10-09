@@ -567,11 +567,13 @@ class DocScanner: NSObject {
                 targetClass,
                 VisionKitPrivateConstants.gestureActionIvarName
             ),
+            // appstore-2.5.2-allow: read gesture target object from UIKit internal target entry
             let target = object_getIvar(internalTarget, targetIvar) as AnyObject?
         else {
             return nil
         }
 
+        // appstore-2.5.2-allow: read gesture action selector offset from UIKit internal target entry
         let actionOffset = ivar_getOffset(actionIvar)
         let actionPointer = Unmanaged.passUnretained(internalTarget).toOpaque().advanced(by: actionOffset)
         let selector = actionPointer.load(as: Selector.self)
