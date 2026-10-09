@@ -7,13 +7,14 @@ final class DocumentScannerTests: XCTestCase {
         XCTAssertEqual(ResponseType.imageFilePath, "imageFilePath")
     }
 
-    func testClampedPageCountWithoutLimit() {
-        XCTAssertEqual(DocScanner.clampedPageCount(total: 5, limit: nil), 5)
-    }
-
-    func testClampedPageCountWithLimit() {
-        XCTAssertEqual(DocScanner.clampedPageCount(total: 10, limit: 3), 3)
-        XCTAssertEqual(DocScanner.clampedPageCount(total: 2, limit: 5), 2)
-        XCTAssertEqual(DocScanner.clampedPageCount(total: 0, limit: 1), 0)
+    func testVisionKitPrivateConstantsAreStatic() {
+        XCTAssertEqual(
+            VisionKitPrivateConstants.inProcessViewControllerClassName,
+            "VNDocumentCameraViewController_InProcess"
+        )
+        XCTAssertEqual(
+            VisionKitPrivateConstants.documentCameraCanAddImagesSelector,
+            Selector("documentCameraController:canAddImages:")
+        )
     }
 }

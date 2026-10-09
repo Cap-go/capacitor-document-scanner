@@ -14,9 +14,8 @@ export interface ScanDocumentOptions {
 
   /**
    * Allow the user to adjust the detected crop before saving.
-   * On iOS this opens the plugin crop editor after each capture (Vision rectangle detection,
-   * perspective correction, and a UIKit corner editor). When disabled and no other managed-flow
-   * options are set, iOS uses the stock VisionKit document camera.
+   * On iOS this forces the native VisionKit preview/editor after each capture using
+   * the private VisionKit navigation hooks needed to keep the scanner flow alive.
    * On Android, crop/rotate is always part of the ML Kit UI in every ScannerMode;
    * use `scannerMode` to control filters and ML cleaning instead.
    * @default true
@@ -26,16 +25,17 @@ export interface ScanDocumentOptions {
   /**
    * When enabled, shows the current scanned page before continuing so the user can
    * review it and explicitly continue or finish the flow.
-   * On iOS this shows a review screen between captures (and when the scan limit is reached).
+   * On iOS this forces the native VisionKit preview/editor between captures.
    * On Android this switches to a one-page-at-a-time flow between ML Kit sessions.
+   * The review/editor screen is still shown automatically when the scan limit is reached.
    * @default false
    */
   reviewCapturedDocument?: boolean;
 
   /**
    * Maximum number of documents to scan.
-   * On iOS: VisionKit caps scans at 24 pages (system limit). The managed scan flow stops adding
-   * pages when your limit is reached and presents the review or crop completion UI.
+   * On iOS: VisionKit caps scans at 24 pages (system limit), and the hacked native flow
+   * can still stop earlier when you pass a smaller limit.
    * On Android: customizable limit; defaults to 20 for performance (clamped 1-24).
    * Set to 1 for single-scan mode where the scanner stops after one document.
    * @default 20 on Android, 24 on iOS

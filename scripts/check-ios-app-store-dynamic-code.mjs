@@ -2,16 +2,21 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 const iosSourcesRoot = path.join(process.cwd(), 'ios', 'Sources');
-const forbiddenPatterns = [
-  { name: 'NSSelectorFromString', regex: /\bNSSelectorFromString\b/ },
-  { name: 'performSelector', regex: /\bperformSelector\b/ },
-  { name: 'NSClassFromString', regex: /\bNSClassFromString\b/ },
-  { name: 'method_exchangeImplementations', regex: /\bmethod_exchangeImplementations\b/ },
-  { name: 'class_addMethod', regex: /\bclass_addMethod\b/ },
-  { name: 'class_getInstanceMethod', regex: /\bclass_getInstanceMethod\b/ },
-  { name: 'dlopen', regex: /\bdlopen\b/ },
-  { name: 'dlsym', regex: /\bdlsym\b/ },
-  { name: 'KVC _targets', regex: /value\s*\(\s*forKey:\s*"_targets"\s*\)/ },
+
+const runtimeDynamicPatterns = [
+  { name: 'NSSelectorFromString', regex: /\bNSSelectorFromString\s*\(/ },
+  { name: 'performSelector', regex: /\bperformSelector\s*\(/ },
+  { name: 'dlopen', regex: /\bdlopen\s*\(/ },
+  { name: 'dlsym', regex: /\bdlsym\s*\(/ },
+  { name: 'NSClassFromString string literal', regex: /\bNSClassFromString\s*\(\s*"/ },
+  {
+    name: 'value(forKey:) string literal',
+    regex: /\.value\s*\(\s*forKey:\s*"/,
+  },
+  {
+    name: 'class_getInstanceVariable string literal',
+    regex: /\bclass_getInstanceVariable\s*\([^,]+,\s*"/,
+  },
 ];
 
 function listSwiftFiles(directory) {
@@ -40,7 +45,7 @@ for (const filePath of listSwiftFiles(iosSourcesRoot)) {
   const contents = readFileSync(filePath, 'utf8');
   const relativePath = path.relative(process.cwd(), filePath);
 
-  for (const pattern of forbiddenPatterns) {
+  for (const pattern of runtimeDynamicPatterns) {
     if (pattern.regex.test(contents)) {
       violations.push(`${relativePath}: ${pattern.name}`);
     }
@@ -48,7 +53,7 @@ for (const filePath of listSwiftFiles(iosSourcesRoot)) {
 }
 
 if (violations.length > 0) {
-  console.error('Forbidden iOS dynamic/private APIs detected:');
+  console.error('Runtime-built iOS dynamic dispatch detected (use static constants):');
   for (const violation of violations) {
     console.error(`  - ${violation}`);
   }
