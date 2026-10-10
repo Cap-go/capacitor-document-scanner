@@ -49,6 +49,8 @@
     "prepublishOnly": "bun run build",
     "check:wiring": "node scripts/check-capacitor-plugin-wiring.mjs",
     "check:cap9-deprecated": "node scripts/check-cap9-deprecated.mjs",
+    "check:ios-app-store": "node scripts/check-ios-app-store-dynamic-code.mjs",
+    "test:ios-app-store-check": "node --test scripts/check-ios-app-store-dynamic-code.test.mjs",
     "example:install": "cd example-app && bun install --frozen-lockfile",
     "example:build": "bun run build && cd example-app && bun install --frozen-lockfile && bun run build",
     "changelog:ai": "node scripts/generate-ai-changelog.mjs"

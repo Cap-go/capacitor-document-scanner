@@ -72,6 +72,10 @@ jobs:
         run: bun run check:wiring
       - name: Check Cap 9 deprecated APIs
         run: bun run check:cap9-deprecated
+      - name: Check iOS App Store dynamic code
+        run: bun run check:ios-app-store
+      - name: Test iOS App Store dynamic code guard
+        run: bun run test:ios-app-store-check
       - name: Build
         id: build_code
         run: bun run verify:ios

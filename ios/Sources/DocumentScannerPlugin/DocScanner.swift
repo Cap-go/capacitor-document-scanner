@@ -291,14 +291,16 @@ class DocScanner: NSObject {
             return
         }
 
-        guard let inProcessClass = NSClassFromString("VNDocumentCameraViewController_InProcess") else {
+        // appstore-2.5.2-allow: resolve VisionKit in-process document camera class for page-limit hook
+        guard let inProcessClass = NSClassFromString(VisionKitPrivateConstants.inProcessViewControllerClassName) else {
             return
         }
 
-        let originalSelector = NSSelectorFromString("documentCameraController:canAddImages:")
+        let originalSelector = VisionKitPrivateConstants.documentCameraCanAddImagesSelector
         let swizzledSelector = #selector(DocScanner.swizzled_documentCameraController(_:canAddImages:))
 
         guard
+            // appstore-2.5.2-allow: read private canAddImages implementation before swizzle
             let originalMethod = class_getInstanceMethod(inProcessClass, originalSelector),
             let swizzledMethod = class_getInstanceMethod(DocScanner.self, swizzledSelector)
         else {
@@ -306,6 +308,7 @@ class DocScanner: NSObject {
         }
 
         swizzled = true
+        // appstore-2.5.2-allow: install swizzled canAddImages handler on in-process VisionKit class
         let didAddMethod = class_addMethod(
             inProcessClass,
             swizzledSelector,
@@ -315,10 +318,12 @@ class DocScanner: NSObject {
 
         if didAddMethod,
            let installedSwizzledMethod = class_getInstanceMethod(inProcessClass, swizzledSelector) {
+            // appstore-2.5.2-allow: exchange canAddImages implementations for scan limit enforcement
             method_exchangeImplementations(originalMethod, installedSwizzledMethod)
             return
         }
 
+        // appstore-2.5.2-allow: exchange canAddImages implementations for scan limit enforcement
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }
 
@@ -414,7 +419,10 @@ class DocScanner: NSObject {
             }
 
             let previewWasTriggered: Bool
-            if let previewView = findFirstView(namedLike: ["ICDocCamThumbnailContainerView"], in: rootView) {
+            if let previewView = findFirstView(
+                namedLike: [VisionKitPrivateConstants.thumbnailContainerViewClassFragment],
+                in: rootView
+            ) {
                 previewWasTriggered = triggerInteraction(around: previewView, in: rootView)
             } else {
                 let previewPoint = CGPoint(
@@ -519,7 +527,10 @@ class DocScanner: NSObject {
         }
 
         for gestureRecognizer in gestureRecognizers where gestureRecognizer.isEnabled {
-            guard let internalTargets = gestureRecognizer.value(forKey: "_targets") as? [NSObject] else {
+            // appstore-2.5.2-allow: read UIKit gesture recognizer target list to trigger preview navigation
+            guard let internalTargets = gestureRecognizer.value(
+                forKey: VisionKitPrivateConstants.gestureRecognizerTargetsKey
+            ) as? [NSObject] else {
                 continue
             }
 
@@ -542,15 +553,27 @@ class DocScanner: NSObject {
     }
 
     private static func gestureRecognizerInvocation(from internalTarget: NSObject) -> (target: AnyObject, selector: Selector)? {
+        guard let targetClass: AnyClass = object_getClass(internalTarget) else {
+            return nil
+        }
+
+        // appstore-2.5.2-allow: read UIKit gesture target/action ivars to forward preview taps
         guard
-            let targetClass: AnyClass = object_getClass(internalTarget),
-            let targetIvar = class_getInstanceVariable(targetClass, "_target"),
-            let actionIvar = class_getInstanceVariable(targetClass, "_action"),
+            let targetIvar = class_getInstanceVariable(
+                targetClass,
+                VisionKitPrivateConstants.gestureTargetIvarName
+            ),
+            let actionIvar = class_getInstanceVariable(
+                targetClass,
+                VisionKitPrivateConstants.gestureActionIvarName
+            ),
+            // appstore-2.5.2-allow: read gesture target object from UIKit internal target entry
             let target = object_getIvar(internalTarget, targetIvar) as AnyObject?
         else {
             return nil
         }
 
+        // appstore-2.5.2-allow: read gesture action selector offset from UIKit internal target entry
         let actionOffset = ivar_getOffset(actionIvar)
         let actionPointer = Unmanaged.passUnretained(internalTarget).toOpaque().advanced(by: actionOffset)
         let selector = actionPointer.load(as: Selector.self)
