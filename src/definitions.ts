@@ -14,8 +14,10 @@ export interface ScanDocumentOptions {
 
   /**
    * Allow the user to adjust the detected crop before saving.
-   * On iOS this forces the native VisionKit preview/editor after each capture using
-   * the private VisionKit navigation hooks needed to keep the scanner flow alive.
+   * On iOS, VisionKit already shows its own review screen before Save.
+   * Forcing that editor after every capture needs the private VisionKit hook, which
+   * is not compiled into the default binary. Set `plugins.DocumentScanner.iosVisionKitHack`
+   * to true and run `npx cap sync` to include it. See the README.
    * On Android, crop/rotate is always part of the ML Kit UI in every ScannerMode;
    * use `scannerMode` to control filters and ML cleaning instead.
    * @default true
@@ -25,17 +27,20 @@ export interface ScanDocumentOptions {
   /**
    * When enabled, shows the current scanned page before continuing so the user can
    * review it and explicitly continue or finish the flow.
-   * On iOS this forces the native VisionKit preview/editor between captures.
+   * On iOS this forces the native VisionKit preview/editor between captures only when
+   * `plugins.DocumentScanner.iosVisionKitHack` is compiled in. The default binary
+   * leaves the system review screen before Save unchanged.
    * On Android this switches to a one-page-at-a-time flow between ML Kit sessions.
-   * The review/editor screen is still shown automatically when the scan limit is reached.
+   * With the iOS hook enabled, the review/editor screen is still shown when the scan limit is reached.
    * @default false
    */
   reviewCapturedDocument?: boolean;
 
   /**
    * Maximum number of documents to scan.
-   * On iOS: VisionKit caps scans at 24 pages (system limit), and the hacked native flow
-   * can still stop earlier when you pass a smaller limit.
+   * On iOS the default binary uses public VisionKit and trims the returned pages to this
+   * limit after Save. VisionKit itself still allows up to 24 captures. Stopping the camera
+   * at a lower limit requires `plugins.DocumentScanner.iosVisionKitHack`.
    * On Android: customizable limit; defaults to 20 for performance (clamped 1-24).
    * Set to 1 for single-scan mode where the scanner stops after one document.
    * @default 20 on Android, 24 on iOS
