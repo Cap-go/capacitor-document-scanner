@@ -177,23 +177,110 @@ export function analyzeSwiftSource(contents) {
   return violations;
 }
 
+const visionKitSwizzleCondition = 'CAPGO_DOCUMENT_SCANNER_VISIONKIT_SWIZZLE';
+
+const defaultBinaryBannedPatterns = [
+  { name: 'method_exchangeImplementations', regex: /\bmethod_exchangeImplementations\s*\(/ },
+  { name: 'NSClassFromString', regex: /\bNSClassFromString\s*\(/ },
+  { name: 'class_getInstanceVariable', regex: /\bclass_getInstanceVariable\s*\(/ },
+  { name: 'object_getIvar', regex: /\bobject_getIvar\s*\(/ },
+  { name: 'ivar_getOffset', regex: /\bivar_getOffset\s*\(/ },
+  { name: 'VNDocumentCameraViewController_InProcess', regex: /VNDocumentCameraViewController_InProcess/ },
+  { name: 'documentCameraController:canAddImages:', regex: /documentCameraController:canAddImages:/ },
+  { name: 'ICDocCamThumbnailContainerView', regex: /ICDocCamThumbnailContainerView/ },
+  { name: 'private gesture target key', regex: /"_targets"|"_target"|"_action"/ },
+];
+
+export function splitVisionKitSwizzle(contents) {
+  const needle = `#if ${visionKitSwizzleCondition}`;
+  let defaultSource = '';
+  let swizzleSource = '';
+  let index = 0;
+  let error = null;
+
+  while (index < contents.length) {
+    const ifAt = contents.indexOf(needle, index);
+    if (ifAt === -1) {
+      defaultSource += contents.slice(index);
+      break;
+    }
+
+    defaultSource += contents.slice(index, ifAt);
+    const elseAt = contents.indexOf('\n#else', ifAt);
+    const endAt = contents.indexOf('\n#endif', ifAt);
+    if (elseAt === -1 || endAt === -1 || elseAt > endAt) {
+      error = `Malformed #if ${visionKitSwizzleCondition}`;
+      defaultSource += contents.slice(ifAt);
+      break;
+    }
+
+    swizzleSource += contents.slice(ifAt + needle.length, elseAt);
+    const elseBodyStart = elseAt + '\n#else'.length;
+    const elseNewline = contents.indexOf('\n', elseBodyStart);
+    const elseContentStart = elseNewline === -1 ? contents.length : elseNewline + 1;
+    defaultSource += contents.slice(elseContentStart, endAt);
+    const endLineEnd = contents.indexOf('\n', endAt + '\n#endif'.length);
+    index = endLineEnd === -1 ? contents.length : endLineEnd + 1;
+  }
+
+  return { defaultSource, swizzleSource, error };
+}
+
+export function analyzeDefaultBinary(contents) {
+  const split = splitVisionKitSwizzle(contents);
+  const violations = analyzeSwiftSource(split.defaultSource);
+
+  if (split.error) {
+    violations.push({ kind: split.error, line: null });
+  }
+
+  for (const pattern of defaultBinaryBannedPatterns) {
+    if (pattern.regex.test(split.defaultSource)) {
+      violations.push({
+        kind: `default binary contains ${pattern.name}`,
+        line: null,
+      });
+    }
+  }
+
+  return violations;
+}
+
+export function analyzeSwizzleBranch(contents) {
+  const split = splitVisionKitSwizzle(contents);
+  return analyzeSwiftSource(split.swizzleSource);
+}
+
+function formatViolation(relativePath, violation) {
+  const location = violation.line ? `${relativePath}:${violation.line}` : relativePath;
+  const detail = violation.detail ? ` (${violation.detail})` : '';
+  return `${location}: ${violation.kind}${detail}`;
+}
+
 function main() {
   const violations = [];
+  let swizzleSource = '';
 
   for (const filePath of listSwiftFiles(iosSourcesRoot)) {
     const contents = readFileSync(filePath, 'utf8');
     const relativePath = path.relative(process.cwd(), filePath);
-    const fileViolations = analyzeSwiftSource(contents);
+    swizzleSource += splitVisionKitSwizzle(contents).swizzleSource;
 
-    for (const violation of fileViolations) {
-      const location = violation.line ? `${relativePath}:${violation.line}` : relativePath;
-      const detail = violation.detail ? ` (${violation.detail})` : '';
-      violations.push(`${location}: ${violation.kind}${detail}`);
+    for (const violation of analyzeDefaultBinary(contents)) {
+      violations.push(formatViolation(relativePath, violation));
+    }
+
+    for (const violation of analyzeSwizzleBranch(contents)) {
+      violations.push(formatViolation(`${relativePath} (opt-in swizzle)`, violation));
     }
   }
 
+  if (!/\bmethod_exchangeImplementations\s*\(/.test(swizzleSource)) {
+    violations.push('ios/Sources: opt-in VisionKit swizzle is missing method_exchangeImplementations');
+  }
+
   if (violations.length > 0) {
-    console.error('Runtime-built iOS dynamic dispatch detected (use static constants):');
+    console.error('iOS App Store dynamic code check failed:');
     for (const violation of violations) {
       console.error(`  - ${violation}`);
     }

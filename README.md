@@ -19,8 +19,8 @@ Scan paper documents with the native scanner UI: VisionKit on iOS and Google ML 
 ## Key features
 
 - **Native scanner UI**: `scanDocument()` opens the VisionKit document camera on iOS and the ML Kit document scanner on Android, with automatic edge detection and perspective correction.
-- **Multi-page scans**: capture up to 24 pages in one session, or pass `maxNumDocuments: 1` for single-page mode.
-- **Crop and review**: `letUserAdjustCrop` lets users fix the detected crop, and `reviewCapturedDocument` shows each page before the next capture.
+- **Multi-page scans**: capture up to 24 pages in one session, or pass `maxNumDocuments: 1` for single-page mode. Android stops after that page. On iOS the camera stops only when `iosVisionKitSwizzle` is enabled; the default binary drops the extra pages after Save.
+- **Crop and review**: Android always offers crop and rotate. On iOS, VisionKit shows its review screen before Save. Forcing the editor after every capture is an opt-in swizzle. See [iOS App Store review](#ios-app-store-review-and-the-visionkit-swizzle).
 - **Image cleanup**: tune `brightness` and `contrast` on both platforms. On Android, `scannerMode` adds filters and ML cleaning that removes stains and fingers.
 - **Flexible output**: get file paths or base64 strings with `responseType`, plus a `success` or `cancel` status.
 - **Platforms**: iOS and Android. Web is not supported: `scanDocument()` rejects as unimplemented.
@@ -76,6 +76,46 @@ This limitation is due to:
 - Emulators lacking the necessary ML Kit runtime components
 
 **For development and testing, always use a real Android device.**
+
+### iOS App Store review and the VisionKit swizzle
+
+The default iOS binary does not include the private VisionKit swizzle. Those calls load `VNDocumentCameraViewController_InProcess` with `NSClassFromString` and exchange `documentCameraController:canAddImages:` through `method_exchangeImplementations`. The same code reads private UIKit gesture state so it can open the crop editor. The iPhoneOS 27.1 SDK still has no public page-limit or per-capture callback on `VNDocumentCameraViewController`.
+
+This follows `@capgo/capacitor-social-login`: the swizzle stays out of the build unless the app opts in.
+
+With the default build:
+
+- Scanning uses the public `VNDocumentCameraViewController` API.
+- `maxNumDocuments` trims the pages returned after Save. The camera can still capture up to VisionKit's 24-page system limit.
+- `letUserAdjustCrop` and `reviewCapturedDocument` do not force the editor after each capture. VisionKit's own review screen before Save is unchanged.
+- Android behavior is unchanged.
+
+Enable the swizzle when you need that iOS behavior back:
+
+```typescript
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  plugins: {
+    DocumentScanner: {
+      iosVisionKitSwizzle: true,
+    },
+  },
+};
+
+export default config;
+```
+
+Then run `bunx cap sync`. That command writes the flag into `Package.swift` and `CapgoCapacitorDocumentScanner.podspec` in the installed plugin, and the next iOS build compiles `CAPGO_DOCUMENT_SCANNER_VISIONKIT_SWIZZLE`. Remove the flag and run `bunx cap sync` again to ship the default binary.
+
+With the swizzle compiled in:
+
+- `maxNumDocuments` stops the camera when the limit is reached. VisionKit's own cap is still 24.
+- `letUserAdjustCrop` opens the VisionKit editor after each capture.
+- `reviewCapturedDocument` shows the current page before the next capture, and the editor still opens when the limit is reached.
+- The binary contains `method_exchangeImplementations`, the private class lookup, and the private gesture reads. Android is unchanged.
+
+That can make App Store review harder. Static analysis may name `method_exchangeImplementations`. You can still explain the use in the review notes: the swizzle only caps the page count and opens the editor inside Apple's document scanner. It does not read private user data, and it does not change anything outside that screen. Some submissions get a question and are approved after that explanation. Others go through with no mention of the symbol. Approval is per submission, so a previous pass does not decide the next binary.
 
 ## Demo
 
@@ -133,16 +173,16 @@ Opens the device camera and starts the document scanning experience.
 
 #### ScanDocumentOptions
 
-| Prop                         | Type                                                  | Description                                                                                                                                                                                                                                                                                                                                                                                    | Default                                 |
-| ---------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| **`croppedImageQuality`**    | <code>number</code>                                   | Android only: quality of the cropped image from 0 - 100 (100 is best).                                                                                                                                                                                                                                                                                                                         | <code>100</code>                        |
-| **`letUserAdjustCrop`**      | <code>boolean</code>                                  | Allow the user to adjust the detected crop before saving. On iOS this forces the native VisionKit preview/editor after each capture using the private VisionKit navigation hooks needed to keep the scanner flow alive. On Android, crop/rotate is always part of the ML Kit UI in every <a href="#scannermode">ScannerMode</a>; use `scannerMode` to control filters and ML cleaning instead. | <code>true</code>                       |
-| **`reviewCapturedDocument`** | <code>boolean</code>                                  | When enabled, shows the current scanned page before continuing so the user can review it and explicitly continue or finish the flow. On iOS this forces the native VisionKit preview/editor between captures. On Android this switches to a one-page-at-a-time flow between ML Kit sessions. The review/editor screen is still shown automatically when the scan limit is reached.             | <code>false</code>                      |
-| **`maxNumDocuments`**        | <code>number</code>                                   | Maximum number of documents to scan. On iOS: VisionKit caps scans at 24 pages (system limit), and the hacked native flow can still stop earlier when you pass a smaller limit. On Android: customizable limit; defaults to 20 for performance (clamped 1-24). Set to 1 for single-scan mode where the scanner stops after one document.                                                        | <code>20 on Android, 24 on iOS</code>   |
-| **`responseType`**           | <code><a href="#responsetype">ResponseType</a></code> | Format to return scanned images in (file paths or base64 strings).                                                                                                                                                                                                                                                                                                                             | <code>ResponseType.ImageFilePath</code> |
-| **`brightness`**             | <code>number</code>                                   | Brightness adjustment applied to scanned images. Range: -255 to 255 (0 = no change, positive = brighter, negative = darker) Useful for compensating low-light scans.                                                                                                                                                                                                                           | <code>0</code>                          |
-| **`contrast`**               | <code>number</code>                                   | Contrast adjustment applied to scanned images. Range: 0.0 to 10.0 (1.0 = no change, &gt;1 = more contrast, &lt;1 = less contrast) Helps improve text clarity in poorly lit scans.                                                                                                                                                                                                              | <code>1.0</code>                        |
-| **`scannerMode`**            | <code><a href="#scannermode">ScannerMode</a></code>   | Android only: scanner mode that controls ML Kit features and filters. Independent of `letUserAdjustCrop` (crop/rotate is available in all modes). - 'base': Basic scan with crop/rotate, no filters or ML cleaning - 'base_with_filter': Adds grayscale and auto-enhancement filters - 'full': All features including ML-based image cleaning (erases stains, fingers, etc.)                   | <code>ScannerMode.Full</code>           |
+| Prop                         | Type                                                  | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Default                                 |
+| ---------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| **`croppedImageQuality`**    | <code>number</code>                                   | Android only: quality of the cropped image from 0 - 100 (100 is best).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | <code>100</code>                        |
+| **`letUserAdjustCrop`**      | <code>boolean</code>                                  | Allow the user to adjust the detected crop before saving. On iOS, VisionKit already shows its own review screen before Save. Forcing that editor after every capture needs the private VisionKit swizzle, which is not compiled into the default binary. Set `plugins.DocumentScanner.iosVisionKitSwizzle` to true and run `bunx cap sync` to include it. See the README. On Android, crop/rotate is always part of the ML Kit UI in every <a href="#scannermode">ScannerMode</a>; use `scannerMode` to control filters and ML cleaning instead.             | <code>true</code>                       |
+| **`reviewCapturedDocument`** | <code>boolean</code>                                  | When enabled, shows the current scanned page before continuing so the user can review it and explicitly continue or finish the flow. On iOS this forces the native VisionKit preview/editor between captures only when `plugins.DocumentScanner.iosVisionKitSwizzle` is compiled in. The default binary leaves the system review screen before Save unchanged. On Android this switches to a one-page-at-a-time flow between ML Kit sessions. With the iOS swizzle enabled, the review/editor screen is still shown when the scan limit is reached.          | <code>false</code>                      |
+| **`maxNumDocuments`**        | <code>number</code>                                   | Maximum number of documents to scan. On iOS the default binary uses public VisionKit and trims the returned pages to this limit after Save. VisionKit itself still allows up to 24 captures. Stopping the camera at a lower limit requires `plugins.DocumentScanner.iosVisionKitSwizzle`. On Android: customizable limit; defaults to 20 for performance (clamped 1-24). Set to 1 for single-scan mode. Android stops after one document. On iOS the camera stops after one document only when `plugins.DocumentScanner.iosVisionKitSwizzle` is compiled in. | <code>20 on Android, 24 on iOS</code>   |
+| **`responseType`**           | <code><a href="#responsetype">ResponseType</a></code> | Format to return scanned images in (file paths or base64 strings).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | <code>ResponseType.ImageFilePath</code> |
+| **`brightness`**             | <code>number</code>                                   | Brightness adjustment applied to scanned images. Range: -255 to 255 (0 = no change, positive = brighter, negative = darker) Useful for compensating low-light scans.                                                                                                                                                                                                                                                                                                                                                                                         | <code>0</code>                          |
+| **`contrast`**               | <code>number</code>                                   | Contrast adjustment applied to scanned images. Range: 0.0 to 10.0 (1.0 = no change, &gt;1 = more contrast, &lt;1 = less contrast) Helps improve text clarity in poorly lit scans.                                                                                                                                                                                                                                                                                                                                                                            | <code>1.0</code>                        |
+| **`scannerMode`**            | <code><a href="#scannermode">ScannerMode</a></code>   | Android only: scanner mode that controls ML Kit features and filters. Independent of `letUserAdjustCrop` (crop/rotate is available in all modes). - 'base': Basic scan with crop/rotate, no filters or ML cleaning - 'base_with_filter': Adds grayscale and auto-enhancement filters - 'full': All features including ML-based image cleaning (erases stains, fingers, etc.)                                                                                                                                                                                 | <code>ScannerMode.Full</code>           |
 
 
 ### Type Aliases

@@ -1,15 +1,36 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { analyzeSwiftSource } from './check-ios-app-store-dynamic-code.mjs';
+import {
+  analyzeDefaultBinary,
+  analyzeSwizzleBranch,
+  analyzeSwiftSource,
+} from './check-ios-app-store-dynamic-code.mjs';
 
-test('allows static VisionKit private constants', () => {
+test('keeps the private VisionKit swizzle out of the default binary', () => {
   const source = `
+#if CAPGO_DOCUMENT_SCANNER_VISIONKIT_SWIZZLE
     NSClassFromString(VisionKitPrivateConstants.inProcessViewControllerClassName)
+    method_exchangeImplementations(originalMethod, swizzledMethod)
     gestureRecognizer.value(forKey: VisionKitPrivateConstants.gestureRecognizerTargetsKey)
     class_getInstanceVariable(targetClass, VisionKitPrivateConstants.gestureTargetIvarName)
+#else
+    let publicScan = VNDocumentCameraViewController()
+#endif
   `;
 
-  assert.equal(analyzeSwiftSource(source).length, 0);
+  assert.equal(analyzeDefaultBinary(source).length, 0);
+  assert.equal(analyzeSwizzleBranch(source).length, 0);
+});
+
+test('rejects private lookup symbols when they ship in the default binary', () => {
+  const source = `
+    NSClassFromString(VisionKitPrivateConstants.inProcessViewControllerClassName)
+    method_exchangeImplementations(originalMethod, swizzledMethod)
+  `;
+
+  const violations = analyzeDefaultBinary(source);
+  assert.ok(violations.some((item) => item.kind === 'default binary contains NSClassFromString'));
+  assert.ok(violations.some((item) => item.kind === 'default binary contains method_exchangeImplementations'));
 });
 
 test('rejects bare identifier lookup arguments', () => {
@@ -23,20 +44,25 @@ test('rejects bare identifier lookup arguments', () => {
   assert.ok(violations.some((item) => item.kind === 'value(forKey:) runtime argument'));
 });
 
-test('flags runtime-built lookup arguments', () => {
+test('flags runtime-built lookup arguments inside the opt-in swizzle', () => {
   const source = `
+#if CAPGO_DOCUMENT_SCANNER_VISIONKIT_SWIZZLE
     NSClassFromString(prefix + suffix)
     NSClassFromString("Prefix\\(suffix)")
     gestureRecognizer.value(forKey: makeKey())
     class_getInstanceVariable(targetClass, makeIvarName())
     NSSelectorFromString("foo")
+#else
+    let publicScan = VNDocumentCameraViewController()
+#endif
   `;
 
-  const violations = analyzeSwiftSource(source);
+  const violations = analyzeSwizzleBranch(source);
   assert.ok(violations.some((item) => item.kind === 'NSSelectorFromString'));
   assert.ok(
-    violations.filter((item) => item.kind === 'NSClassFromString runtime argument').length >= 2
+    violations.filter((item) => item.kind === 'NSClassFromString runtime argument').length >= 2,
   );
   assert.ok(violations.some((item) => item.kind === 'value(forKey:) runtime argument'));
   assert.ok(violations.some((item) => item.kind === 'class_getInstanceVariable runtime argument'));
+  assert.equal(analyzeDefaultBinary(source).length, 0);
 });
