@@ -79,9 +79,9 @@ This limitation is due to:
 
 ### iOS App Store review and the VisionKit page-limit hook
 
-The default iOS binary does not include the private VisionKit swizzle. App Store review has flagged `method_exchangeImplementations` in apps that ship it. The calls load the private class `VNDocumentCameraViewController_InProcess` with `NSClassFromString` and exchange `documentCameraController:canAddImages:`. The same hook also reads private UIKit gesture state to force the crop editor. The iPhoneOS 27.1 SDK still has no public page-limit or per-capture callback on `VNDocumentCameraViewController`, so there is no public replacement that keeps the system scanner.
+The default iOS binary does not include the private VisionKit swizzle. Those calls load `VNDocumentCameraViewController_InProcess` with `NSClassFromString` and exchange `documentCameraController:canAddImages:` through `method_exchangeImplementations`. The same code reads private UIKit gesture state so it can open the crop editor. The iPhoneOS 27.1 SDK still has no public page-limit or per-capture callback on `VNDocumentCameraViewController`.
 
-That follows the same idea as `@capgo/capacitor-social-login`: code that can make review fail stays out of the build unless the app opts in.
+This follows `@capgo/capacitor-social-login`: the swizzle stays out of the build unless the app opts in.
 
 With the default build:
 
@@ -90,7 +90,7 @@ With the default build:
 - `letUserAdjustCrop` and `reviewCapturedDocument` do not force the editor after each capture. VisionKit's own review screen before Save is unchanged.
 - Android behavior is unchanged.
 
-To compile the hook back in, accept the review risk and set:
+Enable the hook when you need that iOS behavior back:
 
 ```typescript
 import type { CapacitorConfig } from '@capacitor/cli';
@@ -106,7 +106,16 @@ const config: CapacitorConfig = {
 export default config;
 ```
 
-Then run `npx cap sync`. The sync hook writes the flag into `Package.swift` and `CapgoCapacitorDocumentScanner.podspec` in the installed plugin, and the next iOS build compiles `CAPGO_DOCUMENT_SCANNER_VISIONKIT_HACK`. Turn it off by removing the flag and running `npx cap sync` again.
+Then run `npx cap sync`. The sync hook writes the flag into `Package.swift` and `CapgoCapacitorDocumentScanner.podspec` in the installed plugin, and the next iOS build compiles `CAPGO_DOCUMENT_SCANNER_VISIONKIT_HACK`. Remove the flag and run `npx cap sync` again to ship the default binary.
+
+With the hook compiled in:
+
+- `maxNumDocuments` stops the camera when the limit is reached. VisionKit's own cap is still 24.
+- `letUserAdjustCrop` opens the VisionKit editor after each capture.
+- `reviewCapturedDocument` shows the current page before the next capture, and the editor still opens when the limit is reached.
+- The binary contains `method_exchangeImplementations`, the private class lookup, and the private gesture reads. Android is unchanged.
+
+That can make App Store review harder. Static analysis may name `method_exchangeImplementations`. You can still explain the use in the review notes: the swizzle only caps the page count and opens the editor inside Apple's document scanner. It does not read private user data, and it does not change anything outside that screen. Some submissions get a question and are approved after that explanation. Others go through with no mention of the symbol. Approval is per submission, so a previous pass does not decide the next binary.
 
 ## Demo
 

@@ -661,8 +661,7 @@ enum VisionKitScanHack {
         NSLog(
             "[DocumentScanner] Private VisionKit page-limit hook is not compiled in. " +
                 "maxNumDocuments only trims pages after Save. " +
-                "Set plugins.DocumentScanner.iosVisionKitHack to true and run cap sync to compile it. " +
-                "That binary can be rejected by App Store review."
+                "Set plugins.DocumentScanner.iosVisionKitHack to true and run cap sync to compile it."
         )
     }
 
