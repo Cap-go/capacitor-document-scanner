@@ -4,6 +4,9 @@ import PackageDescription
 // capgo-visionkit-swizzle: scripts/configure-visionkit-swizzle.mjs sets this during cap sync.
 // false keeps the private VisionKit swizzle out of the App Store binary.
 let visionKitSwizzleEnabled = false
+let visionKitSwizzleSwiftSettings: [SwiftSetting] = visionKitSwizzleEnabled
+    ? [.define("CAPGO_DOCUMENT_SCANNER_VISIONKIT_SWIZZLE")]
+    : []
 
 let package = Package(
     name: "CapgoCapacitorDocumentScanner",
@@ -24,12 +27,11 @@ let package = Package(
                 .product(name: "Cordova", package: "capacitor-swift-pm")
             ],
             path: "ios/Sources/DocumentScannerPlugin",
-            swiftSettings: visionKitSwizzleEnabled
-                ? [.define("CAPGO_DOCUMENT_SCANNER_VISIONKIT_SWIZZLE")]
-                : []),
+            swiftSettings: visionKitSwizzleSwiftSettings),
         .testTarget(
             name: "DocumentScannerPluginTests",
             dependencies: ["DocumentScannerPlugin"],
-            path: "ios/Tests/DocumentScannerPluginTests")
+            path: "ios/Tests/DocumentScannerPluginTests",
+            swiftSettings: visionKitSwizzleSwiftSettings)
     ]
 )

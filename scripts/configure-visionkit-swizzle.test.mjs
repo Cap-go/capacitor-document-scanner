@@ -31,6 +31,7 @@ test('published manifests keep the VisionKit swizzle disabled', () => {
   const podspec = readFileSync(new URL('../CapgoCapacitorDocumentScanner.podspec', import.meta.url), 'utf8');
 
   assert.match(packageSwift, /let visionKitSwizzleEnabled = false/);
+  assert.equal(packageSwift.match(/swiftSettings: visionKitSwizzleSwiftSettings/g)?.length, 2);
   assert.match(podspec, /vision_kit_swizzle_enabled = false/);
   assert.doesNotMatch(packageSwift, /let visionKitSwizzleEnabled = true/);
   assert.equal(setSwizzleEnabled(podspec, podspecMarker, false), podspec);

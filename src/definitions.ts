@@ -17,7 +17,7 @@ export interface ScanDocumentOptions {
    * On iOS, VisionKit already shows its own review screen before Save.
    * Forcing that editor after every capture needs the private VisionKit swizzle, which
    * is not compiled into the default binary. Set `plugins.DocumentScanner.iosVisionKitSwizzle`
-   * to true and run `npx cap sync` to include it. See the README.
+   * to true and run `bunx cap sync` to include it. See the README.
    * On Android, crop/rotate is always part of the ML Kit UI in every ScannerMode;
    * use `scannerMode` to control filters and ML cleaning instead.
    * @default true
@@ -42,7 +42,9 @@ export interface ScanDocumentOptions {
    * limit after Save. VisionKit itself still allows up to 24 captures. Stopping the camera
    * at a lower limit requires `plugins.DocumentScanner.iosVisionKitSwizzle`.
    * On Android: customizable limit; defaults to 20 for performance (clamped 1-24).
-   * Set to 1 for single-scan mode where the scanner stops after one document.
+   * Set to 1 for single-scan mode. Android stops after one document. On iOS the camera
+   * stops after one document only when `plugins.DocumentScanner.iosVisionKitSwizzle`
+   * is compiled in.
    * @default 20 on Android, 24 on iOS
    */
   maxNumDocuments?: number;
