@@ -3,7 +3,7 @@ import Foundation
 import UIKit
 import VisionKit
 
-#if CAPGO_DOCUMENT_SCANNER_VISIONKIT_HACK
+#if CAPGO_DOCUMENT_SCANNER_VISIONKIT_SWIZZLE
 import ObjectiveC.runtime
 
 enum VisionKitPrivateConstants {
@@ -29,7 +29,7 @@ private var documentScanShouldCustomizePreviewNavigation = false
 private var documentScanPreviewNavigationCustomized = false
 private var documentScanModalSuppressionGeneration = 0
 
-final class VisionKitScanHack: NSObject {
+final class VisionKitScanSwizzle: NSObject {
     static let isCompiledIn = true
     private static var swizzled = false
 
@@ -67,18 +67,18 @@ final class VisionKitScanHack: NSObject {
             return
         }
 
-        // appstore-2.5.2-allow: resolve VisionKit in-process document camera class for page-limit hook
+        // appstore-2.5.2-allow: resolve VisionKit in-process document camera class for page-limit swizzle
         guard let inProcessClass = NSClassFromString(VisionKitPrivateConstants.inProcessViewControllerClassName) else {
             return
         }
 
         let originalSelector = VisionKitPrivateConstants.documentCameraCanAddImagesSelector
-        let swizzledSelector = #selector(VisionKitScanHack.swizzled_documentCameraController(_:canAddImages:))
+        let swizzledSelector = #selector(VisionKitScanSwizzle.swizzled_documentCameraController(_:canAddImages:))
 
         guard
             // appstore-2.5.2-allow: read private canAddImages implementation before swizzle
             let originalMethod = class_getInstanceMethod(inProcessClass, originalSelector),
-            let swizzledMethod = class_getInstanceMethod(VisionKitScanHack.self, swizzledSelector)
+            let swizzledMethod = class_getInstanceMethod(VisionKitScanSwizzle.self, swizzledSelector)
         else {
             return
         }
@@ -114,7 +114,7 @@ final class VisionKitScanHack: NSObject {
            acceptedCount > documentScanLastPreviewedAcceptedCount {
             documentScanLastPreviewedAcceptedCount = acceptedCount
             previewWasRequested = true
-            VisionKitScanHack.requestPreviewPresentationIfNeeded(
+            VisionKitScanSwizzle.requestPreviewPresentationIfNeeded(
                 forceNewCycle: true,
                 customizeForCompletion: reachedConfiguredLimit
             )
@@ -122,12 +122,12 @@ final class VisionKitScanHack: NSObject {
 
         if reachedConfiguredLimit {
             if !previewWasRequested {
-                VisionKitScanHack.requestPreviewPresentationIfNeeded(
+                VisionKitScanSwizzle.requestPreviewPresentationIfNeeded(
                     forceNewCycle: true,
                     customizeForCompletion: true
                 )
             }
-            VisionKitScanHack.suppressLimitModalIfNeeded()
+            VisionKitScanSwizzle.suppressLimitModalIfNeeded()
             return false
         }
 
@@ -645,7 +645,7 @@ final class VisionKitScanHack: NSObject {
 
 #else
 
-enum VisionKitScanHack {
+enum VisionKitScanSwizzle {
     static let isCompiledIn = false
 
     static func prepare(limit: Int?, presentPreviewAfterCapture: Bool) {
@@ -653,15 +653,15 @@ enum VisionKitScanHack {
             return
         }
 
-        guard !didLogDisabledHack else {
+        guard !didLogDisabledSwizzle else {
             return
         }
 
-        didLogDisabledHack = true
+        didLogDisabledSwizzle = true
         NSLog(
-            "[DocumentScanner] Private VisionKit page-limit hook is not compiled in. " +
+            "[DocumentScanner] Private VisionKit page-limit swizzle is not compiled in. " +
                 "maxNumDocuments only trims pages after Save. " +
-                "Set plugins.DocumentScanner.iosVisionKitHack to true and run cap sync to compile it."
+                "Set plugins.DocumentScanner.iosVisionKitSwizzle to true and run cap sync to compile it."
         )
     }
 
@@ -669,7 +669,7 @@ enum VisionKitScanHack {
 
     static func attach(controller: VNDocumentCameraViewController) {}
 
-    private static var didLogDisabledHack = false
+    private static var didLogDisabledSwizzle = false
 }
 
 #endif

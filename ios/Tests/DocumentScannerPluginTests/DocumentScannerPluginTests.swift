@@ -7,9 +7,9 @@ final class DocumentScannerTests: XCTestCase {
         XCTAssertEqual(ResponseType.imageFilePath, "imageFilePath")
     }
 
-    func testVisionKitHackMatchesCompileFlag() {
-        #if CAPGO_DOCUMENT_SCANNER_VISIONKIT_HACK
-        XCTAssertTrue(VisionKitScanHack.isCompiledIn)
+    func testVisionKitSwizzleMatchesCompileFlag() {
+        #if CAPGO_DOCUMENT_SCANNER_VISIONKIT_SWIZZLE
+        XCTAssertTrue(VisionKitScanSwizzle.isCompiledIn)
         XCTAssertEqual(
             VisionKitPrivateConstants.inProcessViewControllerClassName,
             "VNDocumentCameraViewController_InProcess"
@@ -19,7 +19,7 @@ final class DocumentScannerTests: XCTestCase {
             Selector("documentCameraController:canAddImages:")
         )
         #else
-        XCTAssertFalse(VisionKitScanHack.isCompiledIn)
+        XCTAssertFalse(VisionKitScanSwizzle.isCompiledIn)
         #endif
     }
 }

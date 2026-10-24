@@ -177,7 +177,7 @@ export function analyzeSwiftSource(contents) {
   return violations;
 }
 
-const visionKitHackCondition = 'CAPGO_DOCUMENT_SCANNER_VISIONKIT_HACK';
+const visionKitSwizzleCondition = 'CAPGO_DOCUMENT_SCANNER_VISIONKIT_SWIZZLE';
 
 const defaultBinaryBannedPatterns = [
   { name: 'method_exchangeImplementations', regex: /\bmethod_exchangeImplementations\s*\(/ },
@@ -191,10 +191,10 @@ const defaultBinaryBannedPatterns = [
   { name: 'private gesture target key', regex: /"_targets"|"_target"|"_action"/ },
 ];
 
-export function splitVisionKitHack(contents) {
-  const needle = `#if ${visionKitHackCondition}`;
+export function splitVisionKitSwizzle(contents) {
+  const needle = `#if ${visionKitSwizzleCondition}`;
   let defaultSource = '';
-  let hackSource = '';
+  let swizzleSource = '';
   let index = 0;
   let error = null;
 
@@ -209,12 +209,12 @@ export function splitVisionKitHack(contents) {
     const elseAt = contents.indexOf('\n#else', ifAt);
     const endAt = contents.indexOf('\n#endif', ifAt);
     if (elseAt === -1 || endAt === -1 || elseAt > endAt) {
-      error = `Malformed #if ${visionKitHackCondition}`;
+      error = `Malformed #if ${visionKitSwizzleCondition}`;
       defaultSource += contents.slice(ifAt);
       break;
     }
 
-    hackSource += contents.slice(ifAt + needle.length, elseAt);
+    swizzleSource += contents.slice(ifAt + needle.length, elseAt);
     const elseBodyStart = elseAt + '\n#else'.length;
     const elseNewline = contents.indexOf('\n', elseBodyStart);
     const elseContentStart = elseNewline === -1 ? contents.length : elseNewline + 1;
@@ -223,11 +223,11 @@ export function splitVisionKitHack(contents) {
     index = endLineEnd === -1 ? contents.length : endLineEnd + 1;
   }
 
-  return { defaultSource, hackSource, error };
+  return { defaultSource, swizzleSource, error };
 }
 
 export function analyzeDefaultBinary(contents) {
-  const split = splitVisionKitHack(contents);
+  const split = splitVisionKitSwizzle(contents);
   const violations = analyzeSwiftSource(split.defaultSource);
 
   if (split.error) {
@@ -246,9 +246,9 @@ export function analyzeDefaultBinary(contents) {
   return violations;
 }
 
-export function analyzeHackBranch(contents) {
-  const split = splitVisionKitHack(contents);
-  return analyzeSwiftSource(split.hackSource);
+export function analyzeSwizzleBranch(contents) {
+  const split = splitVisionKitSwizzle(contents);
+  return analyzeSwiftSource(split.swizzleSource);
 }
 
 function formatViolation(relativePath, violation) {
@@ -259,24 +259,24 @@ function formatViolation(relativePath, violation) {
 
 function main() {
   const violations = [];
-  let hackSource = '';
+  let swizzleSource = '';
 
   for (const filePath of listSwiftFiles(iosSourcesRoot)) {
     const contents = readFileSync(filePath, 'utf8');
     const relativePath = path.relative(process.cwd(), filePath);
-    hackSource += splitVisionKitHack(contents).hackSource;
+    swizzleSource += splitVisionKitSwizzle(contents).swizzleSource;
 
     for (const violation of analyzeDefaultBinary(contents)) {
       violations.push(formatViolation(relativePath, violation));
     }
 
-    for (const violation of analyzeHackBranch(contents)) {
-      violations.push(formatViolation(`${relativePath} (opt-in hack)`, violation));
+    for (const violation of analyzeSwizzleBranch(contents)) {
+      violations.push(formatViolation(`${relativePath} (opt-in swizzle)`, violation));
     }
   }
 
-  if (!/\bmethod_exchangeImplementations\s*\(/.test(hackSource)) {
-    violations.push('ios/Sources: opt-in VisionKit hack is missing method_exchangeImplementations');
+  if (!/\bmethod_exchangeImplementations\s*\(/.test(swizzleSource)) {
+    violations.push('ios/Sources: opt-in VisionKit swizzle is missing method_exchangeImplementations');
   }
 
   if (violations.length > 0) {

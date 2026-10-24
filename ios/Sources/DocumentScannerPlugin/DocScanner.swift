@@ -207,7 +207,7 @@ class DocScanner: NSObject {
             return
         }
 
-        VisionKitScanHack.prepare(
+        VisionKitScanSwizzle.prepare(
             limit: maxNumDocuments,
             presentPreviewAfterCapture: reviewCapturedDocument || letUserAdjustCrop
         )
@@ -215,7 +215,7 @@ class DocScanner: NSObject {
         DispatchQueue.main.async {
             let documentCameraViewController = VNDocumentCameraViewController()
             documentCameraViewController.delegate = self
-            VisionKitScanHack.attach(controller: documentCameraViewController)
+            VisionKitScanSwizzle.attach(controller: documentCameraViewController)
             viewController.present(documentCameraViewController, animated: true)
         }
     }
@@ -412,14 +412,14 @@ extension DocScanner: VNDocumentCameraViewControllerDelegate {
         _ controller: VNDocumentCameraViewController,
         didFinishWith scan: VNDocumentCameraScan
     ) {
-        VisionKitScanHack.reset()
+        VisionKitScanSwizzle.reset()
         dismiss(controller) {
             self.finishScan(with: scan)
         }
     }
 
     func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
-        VisionKitScanHack.reset()
+        VisionKitScanSwizzle.reset()
         dismiss(controller) {
             self.cancelHandler()
         }
@@ -429,7 +429,7 @@ extension DocScanner: VNDocumentCameraViewControllerDelegate {
         _ controller: VNDocumentCameraViewController,
         didFailWithError error: Error
     ) {
-        VisionKitScanHack.reset()
+        VisionKitScanSwizzle.reset()
         dismiss(controller) {
             self.errorHandler(error.localizedDescription)
         }
