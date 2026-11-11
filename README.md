@@ -16,6 +16,17 @@ Scan paper documents with the native scanner UI: VisionKit on iOS and Google ML 
   <img src="https://raw.githubusercontent.com/Cap-go/capacitor-document-scanner/main/.github/assets/readme-demo.webp" alt="Example app on iOS scanning a handwritten page: the scanner finds the page edges and the scanned image appears in the app" width="300" />
 </p>
 
+## Built and maintained with AI
+
+We build, improve and fix our plugins with heavy use of AI. Capgo the product is mostly AI-optional for you; the AI is our own engineering system, and the speed it gives us is part of what you pay for.
+
+- Most plugin issues get a fix pull request the same day, often within a couple of hours, and are usually resolved in one to two days.
+- Every pull request is reviewed automatically by our AI review system, usually within minutes.
+- Our AI pre-checks tests, code review, conventions and security, then a human validates and merges.
+- In the last 90 days, 95% of plugin issues were resolved.
+
+[Learn more about how we build with AI](https://capgo.app/docs/plugins/ai-engineering/)
+
 ## Key features
 
 - **Native scanner UI**: `scanDocument()` opens the VisionKit document camera on iOS and the ML Kit document scanner on Android, with automatic edge detection and perspective correction.
